@@ -224,30 +224,133 @@ class TaskCardsFetcher:
         if not self.browser:
             raise ValueError("Browser not initialized. Use 'with' context manager.")
 
+        # Construct URL
+        base_url = f"https://www.taskcards.de/#/board/{board_id}/view"
+        url = f"{base_url}?token={token}" if token else base_url
+
+        # Create new page
         page = self.browser.new_page()
 
         try:
-            # Construct URL
-            base_url = f"https://www.taskcards.de/#/board/{board_id}/view"
-            url = f"{base_url}?token={token}" if token else base_url
+            # Navigate to the board
+            page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
 
-            # Navigate
-            page.goto(url, wait_until="networkidle", timeout=self.timeout)
+            # Wait for lists to appear first
+            page.wait_for_selector(".board-list", timeout=10000)
 
-            # Wait for Vue app
-            page.wait_for_function("window.$nuxt && window.$nuxt.$store", timeout=self.timeout)
+            # Wait a bit for cards to render
+            page.wait_for_timeout(3000)
 
-            # Take screenshot if requested
+            # Try to wait for at least one card (some boards might have no cards)
+            try:
+                page.wait_for_selector(".board-card", timeout=5000)
+            except Exception:  # noqa: S110
+                # It's okay if there are no cards
+                pass
+
+            # Take screenshot if requested (before extracting data)
             if screenshot_path:
                 page.screenshot(path=screenshot_path, full_page=True)
 
-            # Extract data
+            # Extract board data from DOM (same as fetch_board)
             board_data = page.evaluate("""
                 () => {
-                    const store = window.$nuxt.$store.state;
-                    return store.board || store.boards?.current || store.kanban || store;
+                    const data = {
+                        lists: [],
+                        cards: []
+                    };
+
+                    // Find all card containers (each contains one list and its cards)
+                    const containers = document.querySelectorAll('.card-container');
+
+                    containers.forEach((container, listIndex) => {
+                        // Find the board-list (column header) within this container
+                        const listEl = container.querySelector('.board-list');
+                        if (!listEl) return;
+
+                        const listId = listEl.getAttribute('data-list-id') ||
+                                      listEl.getAttribute('id') ||
+                                      `list-${listIndex}`;
+
+                        // Find list title
+                        let listName = '';
+                        const headerEl = listEl.querySelector('.board-list-header');
+                        if (headerEl) {
+                            // Look for .text-h6 > .contenteditable
+                            const h6 = headerEl.querySelector('.text-h6');
+                            if (h6) {
+                                const editable = h6.querySelector('.contenteditable');
+                                if (editable) {
+                                    listName = editable.textContent.trim();
+                                }
+                            }
+                        }
+
+                        data.lists.push({
+                            id: listId,
+                            name: listName,
+                            position: listIndex,
+                            color: null
+                        });
+
+                        // Find the list-content-container (sibling of board-list)
+                        const contentContainer = container.querySelector('.list-content-container');
+                        if (!contentContainer) return;
+
+                        // Find all cards in this container
+                        const cards = contentContainer.querySelectorAll('.board-card');
+
+                        cards.forEach((cardEl, cardIndex) => {
+                            const cardId = cardEl.getAttribute('data-card-id') ||
+                                          cardEl.getAttribute('id') ||
+                                          `card-${listId}-${cardIndex}`;
+
+                            // Find card title from header
+                            let cardTitle = '';
+                            const cardHeader = cardEl.querySelector('.board-card-header');
+                            if (cardHeader) {
+                                const editable = cardHeader.querySelector('.contenteditable');
+                                if (editable) {
+                                    cardTitle = editable.textContent.trim();
+                                } else {
+                                    cardTitle = cardHeader.textContent.trim();
+                                }
+                            }
+
+                            // If no title found, use card content
+                            if (!cardTitle) {
+                                const cardContent = cardEl.querySelector('.board-card-content');
+                                if (cardContent) {
+                                    cardTitle = cardContent.textContent.trim().substring(0, 100);
+                                }
+                            }
+
+                            // Fallback to any text in the card
+                            if (!cardTitle) {
+                                cardTitle = cardEl.textContent.trim().substring(0, 100);
+                            }
+
+                            data.cards.push({
+                                id: cardId,
+                                title: cardTitle,
+                                description: '',
+                                created: null,
+                                modified: null,
+                                kanbanPosition: {
+                                    listId: listId,
+                                    position: cardIndex
+                                }
+                            });
+                        });
+                    });
+
+                    return data;
                 }
             """)
+
+            # Validate we got board data
+            if not board_data or (not board_data.get("lists") and not board_data.get("cards")):
+                raise ValueError("Board data does not contain expected 'lists' or 'cards' fields")
 
             return board_data
 
