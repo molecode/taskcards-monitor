@@ -54,9 +54,9 @@ uv run taskcards-monitor check BOARD_ID
 
 ### Commands
 
-- `check BOARD_ID` - Check a board for changes
+- `check BOARD_ID` - Check a board for changes and save state
 - `show BOARD_ID` - Show the current saved state
-- `inspect BOARD_ID` - Inspect a board in non-headless mode (for debugging)
+- `inspect BOARD_ID` - Explore a board with detailed output (debugging, does NOT save state)
 
 ### Options
 
@@ -67,21 +67,29 @@ uv run taskcards-monitor check BOARD_ID
 ### Examples
 
 ```bash
-# Check a private board
+# Check a private board for changes (saves state)
 uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
-# Check with visible browser (for debugging)
+# Check with visible browser (useful for seeing what's happening)
 uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN --no-headless
 
 # Show saved state
 uv run taskcards-monitor show BOARD_ID
 
-# Inspect board with screenshot
+# Inspect board with detailed output (debugging, doesn't save state)
+uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
+
+# Inspect and save screenshot
 uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN --screenshot board.png
 
-# Verbose mode (shows browser activity)
-uv run taskcards-monitor check BOARD_ID -v
+# Verbose mode (shows detailed progress)
+uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
 ```
+
+**Command differences:**
+- `check` - For monitoring: saves state, detects changes, headless by default
+- `check --no-headless` - Same as above but you can watch the browser
+- `inspect` - For debugging: shows detailed board info, always visible browser, does NOT save state
 
 ## How It Works
 

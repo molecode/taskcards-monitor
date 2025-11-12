@@ -229,40 +229,109 @@ def show(board_id: str):
 @click.option("--token", "-t", help="View token for private/protected boards")
 @click.option("--screenshot", "-s", help="Save screenshot to this path")
 def inspect(board_id: str, token: str | None, screenshot: str | None):
-    """Inspect a board and optionally save a screenshot for debugging."""
+    """
+    Inspect a board for debugging (visible browser, detailed output).
 
-    console.print(f"[bold]Inspecting board:[/bold] {board_id}\n")
+    This command is for exploring and debugging boards. It:
+    - Always opens a visible browser window
+    - Shows detailed information about all columns and cards
+    - Does NOT save state or affect monitoring
+    - Keeps browser open briefly for manual inspection
+    """
+
+    console.print(Panel(
+        f"[bold cyan]Board ID:[/bold cyan] {board_id}\n"
+        f"[dim]This is a debugging tool - state will NOT be saved[/dim]",
+        title="Inspect Mode",
+        border_style="cyan"
+    ))
 
     try:
-        with console.status("[bold green]Opening board in browser...", spinner="dots"):
-            with TaskCardsFetcher(headless=False) as fetcher:
-                if screenshot:
-                    data = fetcher.fetch_board_with_screenshot(
-                        board_id,
-                        token=token,
-                        screenshot_path=screenshot
-                    )
-                    console.print(f"[green]Screenshot saved to:[/green] {screenshot}")
-                else:
-                    data = fetcher.fetch_board(board_id, token=token)
+        console.print("\n[cyan]Opening browser (visible mode)...[/cyan]")
 
-        # Display basic info
+        with TaskCardsFetcher(headless=False) as fetcher:
+            if screenshot:
+                data = fetcher.fetch_board_with_screenshot(
+                    board_id,
+                    token=token,
+                    screenshot_path=screenshot
+                )
+                console.print(f"\n[green]✓ Screenshot saved to:[/green] {screenshot}")
+            else:
+                data = fetcher.fetch_board(board_id, token=token)
+
+        # Create state for display
         state = BoardState(data)
-        console.print(f"\n[green]Board loaded successfully![/green]")
-        console.print(f"Columns: {len(state.columns)}")
-        console.print(f"Cards: {len(state.cards)}\n")
 
-        # Display columns
+        console.print(f"\n[green]✓ Board loaded successfully![/green]\n")
+
+        # Display detailed statistics
+        console.print("[bold]Board Statistics:[/bold]")
+        console.print(f"  Total Columns: {len(state.columns)}")
+        console.print(f"  Total Cards: {len(state.cards)}")
+
+        # Count cards per column
+        cards_per_column = {}
+        for card_id, card_data in state.cards.items():
+            col_id = card_data["column_id"]
+            cards_per_column[col_id] = cards_per_column.get(col_id, 0) + 1
+
+        console.print(f"  Columns with cards: {len([c for c in cards_per_column.values() if c > 0])}")
+        console.print(f"  Empty columns: {len(state.columns) - len([c for c in cards_per_column.values() if c > 0])}\n")
+
+        # Display columns with card counts
         if state.columns:
-            console.print("[bold]Columns:[/bold]")
+            table = Table(title="Columns Overview", show_header=True, header_style="bold cyan")
+            table.add_column("Position", style="dim", width=8)
+            table.add_column("Column Name", style="cyan")
+            table.add_column("Cards", style="green", justify="right", width=6)
+
             for col_id, col_data in sorted(
                 state.columns.items(),
                 key=lambda x: x[1]["position"]
             ):
-                console.print(f"  • {col_data['name']}")
+                card_count = cards_per_column.get(col_id, 0)
+                table.add_row(
+                    str(col_data["position"]),
+                    col_data["name"],
+                    str(card_count)
+                )
+            console.print(table)
+            console.print()
+
+        # Display detailed card list
+        if state.cards:
+            table = Table(title="Cards Detail", show_header=True, header_style="bold magenta")
+            table.add_column("Card Title", style="magenta", overflow="fold")
+            table.add_column("Column", style="dim")
+            table.add_column("Position", style="dim", justify="right", width=8)
+
+            # Group cards by column and sort
+            cards_by_column = {}
+            for card_id, card_data in state.cards.items():
+                col_id = card_data["column_id"]
+                if col_id not in cards_by_column:
+                    cards_by_column[col_id] = []
+                cards_by_column[col_id].append((card_id, card_data))
+
+            # Display cards sorted by column position then card position
+            for col_id in sorted(state.columns.keys(), key=lambda x: state.columns[x]["position"]):
+                if col_id in cards_by_column:
+                    column_name = state.columns[col_id]["name"]
+                    for card_id, card_data in sorted(cards_by_column[col_id], key=lambda x: x[1]["position"] or 0):
+                        table.add_row(
+                            card_data["title"][:60],
+                            column_name,
+                            str(card_data["position"] or "-")
+                        )
+
+            console.print(table)
+            console.print()
+
+        console.print("[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n")
 
     except Exception as e:
-        console.print(f"[bold red]Error:[/bold red] {str(e)}")
+        console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
         raise click.Abort()
 
 
