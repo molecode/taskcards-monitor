@@ -127,7 +127,7 @@ class BoardMonitor:
             return None
 
         try:
-            with open(self.state_file, "r") as f:
+            with open(self.state_file) as f:
                 data = json.load(f)
                 return BoardState.from_dict(data)
         except (json.JSONDecodeError, KeyError, FileNotFoundError):
@@ -143,11 +143,7 @@ class BoardMonitor:
         with open(self.state_file, "w") as f:
             json.dump(state.to_dict(), f, indent=2)
 
-    def detect_changes(
-        self,
-        current: BoardState,
-        previous: BoardState | None
-    ) -> dict[str, Any]:
+    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
         """
         Detect changes between current and previous board states.
 
@@ -181,28 +177,34 @@ class BoardMonitor:
 
         # Added columns
         for col_id in curr_col_ids - prev_col_ids:
-            changes["columns_added"].append({
-                "id": col_id,
-                "name": current.columns[col_id]["name"],
-            })
+            changes["columns_added"].append(
+                {
+                    "id": col_id,
+                    "name": current.columns[col_id]["name"],
+                }
+            )
 
         # Removed columns
         for col_id in prev_col_ids - curr_col_ids:
-            changes["columns_removed"].append({
-                "id": col_id,
-                "name": previous.columns[col_id]["name"],
-            })
+            changes["columns_removed"].append(
+                {
+                    "id": col_id,
+                    "name": previous.columns[col_id]["name"],
+                }
+            )
 
         # Renamed columns
         for col_id in prev_col_ids & curr_col_ids:
             prev_name = previous.columns[col_id]["name"]
             curr_name = current.columns[col_id]["name"]
             if prev_name != curr_name:
-                changes["columns_renamed"].append({
-                    "id": col_id,
-                    "old_name": prev_name,
-                    "new_name": curr_name,
-                })
+                changes["columns_renamed"].append(
+                    {
+                        "id": col_id,
+                        "old_name": prev_name,
+                        "new_name": curr_name,
+                    }
+                )
 
         # Detect card changes
         prev_card_ids = set(previous.cards.keys())
@@ -212,21 +214,25 @@ class BoardMonitor:
         for card_id in curr_card_ids - prev_card_ids:
             card = current.cards[card_id]
             column_name = current.columns.get(card["column_id"], {}).get("name", "Unknown")
-            changes["cards_added"].append({
-                "id": card_id,
-                "title": card["title"],
-                "column": column_name,
-            })
+            changes["cards_added"].append(
+                {
+                    "id": card_id,
+                    "title": card["title"],
+                    "column": column_name,
+                }
+            )
 
         # Removed cards
         for card_id in prev_card_ids - curr_card_ids:
             card = previous.cards[card_id]
             column_name = previous.columns.get(card["column_id"], {}).get("name", "Unknown")
-            changes["cards_removed"].append({
-                "id": card_id,
-                "title": card["title"],
-                "column": column_name,
-            })
+            changes["cards_removed"].append(
+                {
+                    "id": card_id,
+                    "title": card["title"],
+                    "column": column_name,
+                }
+            )
 
         # Moved cards (existing cards that changed columns)
         for card_id in prev_card_ids & curr_card_ids:
@@ -240,11 +246,13 @@ class BoardMonitor:
                 prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
                 curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
 
-                changes["cards_moved"].append({
-                    "id": card_id,
-                    "title": curr_card["title"],
-                    "from_column": prev_col_name,
-                    "to_column": curr_col_name,
-                })
+                changes["cards_moved"].append(
+                    {
+                        "id": card_id,
+                        "title": curr_card["title"],
+                        "from_column": prev_col_name,
+                        "to_column": curr_col_name,
+                    }
+                )
 
         return changes

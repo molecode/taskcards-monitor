@@ -1,8 +1,9 @@
 """Fetcher for TaskCards board data using Playwright."""
 
-import json
 from typing import Any
-from playwright.sync_api import sync_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
+
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import sync_playwright
 
 
 class TaskCardsFetcher:
@@ -54,10 +55,7 @@ class TaskCardsFetcher:
 
         # Construct URL
         base_url = f"https://www.taskcards.de/#/board/{board_id}/view"
-        if token:
-            url = f"{base_url}?token={token}"
-        else:
-            url = base_url
+        url = f"{base_url}?token={token}" if token else base_url
 
         # Create new page
         page = self.browser.new_page()
@@ -75,7 +73,7 @@ class TaskCardsFetcher:
             # Try to wait for at least one card (some boards might have no cards)
             try:
                 page.wait_for_selector(".board-card", timeout=5000)
-            except:
+            except Exception:  # noqa: S110
                 # It's okay if there are no cards
                 pass
 
@@ -193,12 +191,15 @@ class TaskCardsFetcher:
                 page_content = page.content()
                 if "404" in page_content or "not found" in page_content.lower():
                     raise ValueError(f"Board {board_id} not found") from e
-                elif "access denied" in page_content.lower() or "unauthorized" in page_content.lower():
+                elif (
+                    "access denied" in page_content.lower()
+                    or "unauthorized" in page_content.lower()
+                ):
                     raise ValueError(
                         f"Access denied to board {board_id}. "
                         f"Check if the board is private and requires a valid token."
                     ) from e
-            except:
+            except Exception:  # noqa: S110
                 pass
 
             raise ValueError(f"Failed to extract board data: {str(e)}") from e
@@ -207,10 +208,7 @@ class TaskCardsFetcher:
             page.close()
 
     def fetch_board_with_screenshot(
-        self,
-        board_id: str,
-        token: str | None = None,
-        screenshot_path: str | None = None
+        self, board_id: str, token: str | None = None, screenshot_path: str | None = None
     ) -> dict[str, Any]:
         """
         Fetch board data and optionally take a screenshot for debugging.
@@ -237,10 +235,7 @@ class TaskCardsFetcher:
             page.goto(url, wait_until="networkidle", timeout=self.timeout)
 
             # Wait for Vue app
-            page.wait_for_function(
-                "window.$nuxt && window.$nuxt.$store",
-                timeout=self.timeout
-            )
+            page.wait_for_function("window.$nuxt && window.$nuxt.$store", timeout=self.timeout)
 
             # Take screenshot if requested
             if screenshot_path:

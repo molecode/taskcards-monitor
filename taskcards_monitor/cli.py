@@ -2,13 +2,11 @@
 
 import click
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
-from rich import print as rprint
+from rich.table import Table
 
 from .fetcher import TaskCardsFetcher
 from .monitor import BoardMonitor, BoardState
-
 
 console = Console()
 
@@ -23,29 +21,25 @@ def display_changes(changes: dict) -> None:
                 f"Columns: {changes['columns_count']}\n"
                 f"Cards: {changes['cards_count']}",
                 title="First Run",
-                border_style="green"
+                border_style="green",
             )
         )
         return
 
     # Check if there are any changes
-    has_changes = any([
-        changes["columns_added"],
-        changes["columns_removed"],
-        changes["columns_renamed"],
-        changes["cards_added"],
-        changes["cards_removed"],
-        changes["cards_moved"],
-    ])
+    has_changes = any(
+        [
+            changes["columns_added"],
+            changes["columns_removed"],
+            changes["columns_renamed"],
+            changes["cards_added"],
+            changes["cards_removed"],
+            changes["cards_moved"],
+        ]
+    )
 
     if not has_changes:
-        console.print(
-            Panel(
-                "[dim]No changes detected[/dim]",
-                title="Status",
-                border_style="blue"
-            )
-        )
+        console.print(Panel("[dim]No changes detected[/dim]", title="Status", border_style="blue"))
         return
 
     # Display changes
@@ -121,10 +115,7 @@ def display_state(state: BoardState) -> None:
         table = Table(title="Columns", show_header=True, header_style="bold blue")
         table.add_column("Name", style="blue")
         table.add_column("Position", style="dim")
-        for col_id, col_data in sorted(
-            state.columns.items(),
-            key=lambda x: x[1]["position"]
-        ):
+        for _col_id, col_data in sorted(state.columns.items(), key=lambda x: x[1]["position"]):
             table.add_row(col_data["name"], str(col_data["position"]))
         console.print(table)
         console.print()
@@ -134,15 +125,13 @@ def display_state(state: BoardState) -> None:
         table = Table(title="Cards", show_header=True, header_style="bold magenta")
         table.add_column("Title", style="magenta")
         table.add_column("Column", style="dim")
-        for card_id, card_data in state.cards.items():
+        for _card_id, card_data in state.cards.items():
             column_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
             table.add_row(card_data["title"], column_name)
         console.print(table)
         console.print()
 
-    console.print(
-        f"[dim]Total: {len(state.columns)} columns, {len(state.cards)} cards[/dim]\n"
-    )
+    console.print(f"[dim]Total: {len(state.columns)} columns, {len(state.cards)} cards[/dim]\n")
 
 
 @click.group()
@@ -179,16 +168,18 @@ def check(board_id: str, token: str | None, headless: bool, verbose: bool):
 
     # Fetch current board data
     try:
-        with console.status("[bold green]Fetching board data...", spinner="dots"):
-            with TaskCardsFetcher(headless=headless) as fetcher:
-                data = fetcher.fetch_board(board_id, token=token)
+        with (
+            console.status("[bold green]Fetching board data...", spinner="dots"),
+            TaskCardsFetcher(headless=headless) as fetcher,
+        ):
+            data = fetcher.fetch_board(board_id, token=token)
 
         if verbose:
             console.print("[dim]Board data fetched successfully[/dim]")
 
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
-        raise click.Abort()
+        raise click.Abort() from e
 
     # Create current state
     current_state = BoardState(data)
@@ -239,12 +230,14 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
     - Keeps browser open briefly for manual inspection
     """
 
-    console.print(Panel(
-        f"[bold cyan]Board ID:[/bold cyan] {board_id}\n"
-        f"[dim]This is a debugging tool - state will NOT be saved[/dim]",
-        title="Inspect Mode",
-        border_style="cyan"
-    ))
+    console.print(
+        Panel(
+            f"[bold cyan]Board ID:[/bold cyan] {board_id}\n"
+            f"[dim]This is a debugging tool - state will NOT be saved[/dim]",
+            title="Inspect Mode",
+            border_style="cyan",
+        )
+    )
 
     try:
         console.print("\n[cyan]Opening browser (visible mode)...[/cyan]")
@@ -252,9 +245,7 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
         with TaskCardsFetcher(headless=False) as fetcher:
             if screenshot:
                 data = fetcher.fetch_board_with_screenshot(
-                    board_id,
-                    token=token,
-                    screenshot_path=screenshot
+                    board_id, token=token, screenshot_path=screenshot
                 )
                 console.print(f"\n[green]✓ Screenshot saved to:[/green] {screenshot}")
             else:
@@ -263,7 +254,7 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
         # Create state for display
         state = BoardState(data)
 
-        console.print(f"\n[green]✓ Board loaded successfully![/green]\n")
+        console.print("\n[green]✓ Board loaded successfully![/green]\n")
 
         # Display detailed statistics
         console.print("[bold]Board Statistics:[/bold]")
@@ -272,12 +263,16 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
 
         # Count cards per column
         cards_per_column = {}
-        for card_id, card_data in state.cards.items():
+        for _card_id, card_data in state.cards.items():
             col_id = card_data["column_id"]
             cards_per_column[col_id] = cards_per_column.get(col_id, 0) + 1
 
-        console.print(f"  Columns with cards: {len([c for c in cards_per_column.values() if c > 0])}")
-        console.print(f"  Empty columns: {len(state.columns) - len([c for c in cards_per_column.values() if c > 0])}\n")
+        console.print(
+            f"  Columns with cards: {len([c for c in cards_per_column.values() if c > 0])}"
+        )
+        console.print(
+            f"  Empty columns: {len(state.columns) - len([c for c in cards_per_column.values() if c > 0])}\n"
+        )
 
         # Display columns with card counts
         if state.columns:
@@ -286,16 +281,9 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
             table.add_column("Column Name", style="cyan")
             table.add_column("Cards", style="green", justify="right", width=6)
 
-            for col_id, col_data in sorted(
-                state.columns.items(),
-                key=lambda x: x[1]["position"]
-            ):
+            for col_id, col_data in sorted(state.columns.items(), key=lambda x: x[1]["position"]):
                 card_count = cards_per_column.get(col_id, 0)
-                table.add_row(
-                    str(col_data["position"]),
-                    col_data["name"],
-                    str(card_count)
-                )
+                table.add_row(str(col_data["position"]), col_data["name"], str(card_count))
             console.print(table)
             console.print()
 
@@ -318,21 +306,23 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
             for col_id in sorted(state.columns.keys(), key=lambda x: state.columns[x]["position"]):
                 if col_id in cards_by_column:
                     column_name = state.columns[col_id]["name"]
-                    for card_id, card_data in sorted(cards_by_column[col_id], key=lambda x: x[1]["position"] or 0):
+                    for _card_id, card_data in sorted(
+                        cards_by_column[col_id], key=lambda x: x[1]["position"] or 0
+                    ):
                         table.add_row(
-                            card_data["title"][:60],
-                            column_name,
-                            str(card_data["position"] or "-")
+                            card_data["title"][:60], column_name, str(card_data["position"] or "-")
                         )
 
             console.print(table)
             console.print()
 
-        console.print("[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n")
+        console.print(
+            "[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n"
+        )
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 if __name__ == "__main__":

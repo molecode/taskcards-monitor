@@ -177,17 +177,23 @@ uv run taskcards-monitor inspect BOARD_ID --token TOKEN --screenshot debug.png
 ## Development
 
 ```bash
-# Install dependencies
-uv sync
+# Install dependencies (including dev tools)
+uv sync --group dev
 
-# Run tests (if any)
-pytest
+# Install pre-commit hooks
+uv run pre-commit install
+
+# Run linter
+uv run ruff check taskcards_monitor/
+
+# Auto-fix linting issues
+uv run ruff check --fix taskcards_monitor/
 
 # Format code
-black taskcards_monitor/
+uv run ruff format taskcards_monitor/
 
-# Type checking
-mypy taskcards_monitor/
+# Run pre-commit checks manually
+uv run pre-commit run --all-files
 ```
 
 ## Project Structure
