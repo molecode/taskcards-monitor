@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "Monitor TaskCards boards for changes using browser automation"
 requires-python = ">=3.12"
 dependencies = [
-    "playwright>=1.48.0",
-    "click>=8.1.0",
-    "rich>=13.0.0",
+    "playwright==1.48.0",
+    "click==8.1.0",
+    "rich==13.0.0",
 ]
 
 [project.scripts]
@@ -14,8 +14,8 @@ taskcards-monitor = "taskcards_monitor.cli:main"
 
 [dependency-groups]
 dev = [
-    "ruff>=0.8.0",
-    "pre-commit>=4.0.0",
+    "ruff==0.8.0",
+    "pre-commit==4.0.0",
 ]
 
 [build-system]
@@ -25,24 +25,3 @@ build-backend = "hatchling.build"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-
-[tool.ruff.lint]
-select = [
-    "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings
-    "F",   # pyflakes
-    "I",   # isort
-    "N",   # pep8-naming
-    "UP",  # pyupgrade
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
-    "SIM", # flake8-simplify
-]
-ignore = [
-    "E501",   # line too long (handled by formatter)
-    "SIM105", # Use contextlib.suppress (prefer explicit try-except for clarity)
-]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
