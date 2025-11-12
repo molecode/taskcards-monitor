@@ -210,7 +210,6 @@ taskcards_monitor/
 
 Planned features (not yet implemented):
 - Email notifications
-- Webhook support
 - Change history tracking
 - Diff view for card content changes
 
