@@ -1,0 +1,20 @@
+[project]
+name = "taskcards-monitor"
+version = "0.1.0"
+description = "Monitor TaskCards boards for changes using browser automation"
+requires-python = ">=3.12"
+dependencies = [
+    "playwright>=1.48.0",
+    "click>=8.1.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+taskcards-monitor = "taskcards_monitor.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
