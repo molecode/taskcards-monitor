@@ -271,7 +271,7 @@ def show(board_id: str):
     display_state(state)
 
 
-@main.command()
+@main.command(name="list")
 def list_boards():
     """List all boards that have been checked."""
 
