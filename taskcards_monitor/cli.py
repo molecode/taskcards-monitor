@@ -1,5 +1,7 @@
 """Command-line interface for TaskCards monitor."""
 
+from importlib.metadata import version
+
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -135,7 +137,7 @@ def display_state(state: BoardState) -> None:
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version=version("taskcards-monitor"))
 def main():
     """Monitor TaskCards boards for changes."""
     pass
