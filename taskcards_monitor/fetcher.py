@@ -40,14 +40,14 @@ class TaskCardsFetcher:
         if self.playwright:
             self.playwright.stop()
 
-    def _fetch_board_internal(
+    def fetch_board(
         self,
         board_id: str,
         token: str | None = None,
         screenshot_path: str | None = None,
     ) -> dict[str, Any]:
         """
-        Internal method to fetch board data with optional screenshot.
+        Fetch board data using Playwright with optional screenshot.
 
         Args:
             board_id: The board ID
@@ -149,36 +149,3 @@ class TaskCardsFetcher:
 
         finally:
             page.close()
-
-    def fetch_board(self, board_id: str, token: str | None = None) -> dict[str, Any]:
-        """
-        Fetch board data using Playwright.
-
-        Args:
-            board_id: The board ID
-            token: Optional view token for private boards
-
-        Returns:
-            Dictionary containing board data with lists and cards
-
-        Raises:
-            ValueError: If browser is not initialized or board data cannot be extracted
-            PlaywrightTimeoutError: If page load times out
-        """
-        return self._fetch_board_internal(board_id, token)
-
-    def fetch_board_with_screenshot(
-        self, board_id: str, token: str | None = None, screenshot_path: str | None = None
-    ) -> dict[str, Any]:
-        """
-        Fetch board data and optionally take a screenshot for debugging.
-
-        Args:
-            board_id: The board ID
-            token: Optional view token for private boards
-            screenshot_path: Optional path to save screenshot
-
-        Returns:
-            Dictionary containing board data
-        """
-        return self._fetch_board_internal(board_id, token, screenshot_path)

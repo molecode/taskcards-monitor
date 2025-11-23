@@ -297,13 +297,9 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
         console.print("\n[cyan]Opening browser (visible mode)...[/cyan]")
 
         with TaskCardsFetcher(headless=False) as fetcher:
+            data = fetcher.fetch_board(board_id, token=token, screenshot_path=screenshot)
             if screenshot:
-                data = fetcher.fetch_board_with_screenshot(
-                    board_id, token=token, screenshot_path=screenshot
-                )
                 console.print(f"\n[green]✓ Screenshot saved to:[/green] {screenshot}")
-            else:
-                data = fetcher.fetch_board(board_id, token=token)
 
         # Create state for display
         state = BoardState(data)
