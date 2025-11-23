@@ -228,8 +228,8 @@ class TaskCardsFetcher:
         base_url = f"https://www.taskcards.de/#/board/{board_id}/view"
         url = f"{base_url}?token={token}" if token else base_url
 
-        # Create new page
-        page = self.browser.new_page()
+        # Create new page with larger viewport for wide boards
+        page = self.browser.new_page(viewport={"width": 1920, "height": 1080})
 
         try:
             # Navigate to the board
