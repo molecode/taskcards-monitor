@@ -1,16 +1,15 @@
 # taskcards-monitor
 
-Monitor TaskCards boards for changes (added/removed cards and columns) using browser automation.
+Monitor TaskCards boards (https://www.taskcards.de) for changes (added/removed cards and columns) using browser automation.
 
 ## Features
 
-- 🔍 Monitor both **public and private** TaskCards boards
-- ✅ Detect added/removed cards
-- 📊 Detect added/removed/renamed columns
-- 🔄 Track card movements between columns
-- 🎭 Uses Playwright browser automation (works with private boards!)
-- 📝 Beautiful console output with Rich
-- 💾 Persistent state tracking
+- Monitor both **public and private** TaskCards boards
+- Detect added/removed cards
+- Detect added/removed/renamed columns
+- Track card movements between columns
+- Uses Playwright browser automation
+- Persistent state tracking
 
 ## Installation
 
@@ -20,29 +19,20 @@ uv sync
 
 # Install Playwright browsers
 uv run playwright install chromium
-
-# Or use pip
-pip install -e .
-playwright install chromium
 ```
 
 ## Quick Start
 
-### Monitor a Private Board
-
-```bash
-# First run - initializes the board state
-uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
-
-# Subsequent runs - detects changes
-uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
-```
-
 ### Monitor a Public Board
 
 ```bash
-# No token needed for public boards
 uv run taskcards-monitor check BOARD_ID
+```
+
+### Monitor a Private Board
+
+```bash
+uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 ```
 
 **Finding Board IDs and Tokens:**
@@ -86,20 +76,7 @@ uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN --screenshot board.
 uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
 ```
 
-**Command differences:**
-- `check` - For monitoring: saves state, detects changes, headless by default
-- `check --no-headless` - Same as above but you can watch the browser
-- `inspect` - For debugging: shows detailed board info, always visible browser, does NOT save state
-
-## How It Works
-
-1. **Launch Browser**: Uses Playwright to launch a real Chromium browser
-2. **Navigate**: Opens the TaskCards board URL (with token if private)
-3. **Wait for Render**: Waits for the page to fully load and render
-4. **Extract Data**: Scrapes column names and card titles from the rendered DOM
-5. **Compare**: Compares with previously saved state
-6. **Report**: Displays any detected changes with beautiful formatting
-7. **Save**: Updates the saved state for the next run
+## State Files
 
 State files are saved in `~/.cache/taskcards-monitor/BOARD_ID.json`
 
@@ -107,10 +84,6 @@ State files are saved in `~/.cache/taskcards-monitor/BOARD_ID.json`
 
 - Uses **Playwright** for browser automation (headless Chromium)
 - Scrapes data from the rendered DOM (TaskCards uses Vue.js but doesn't expose the store)
-- Works with **both public and private boards** (with view tokens)
-- Detects:
-  - Columns: added, removed, renamed
-  - Cards: added, removed, moved between columns
 
 ### Why Playwright?
 
