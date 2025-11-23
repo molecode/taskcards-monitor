@@ -1,6 +1,8 @@
 """Command-line interface for TaskCards monitor."""
 
+import json
 from importlib.metadata import version
+from pathlib import Path
 
 import click
 from rich.console import Console
@@ -267,6 +269,85 @@ def show(board_id: str):
         return
 
     display_state(state)
+
+
+@main.command(name="list")
+def list_boards():
+    """List all boards that have been checked."""
+
+    # Get the state directory (same logic as BoardMonitor.__init__)
+    state_dir = Path.home() / ".cache" / "taskcards-monitor"
+
+    if not state_dir.exists():
+        console.print(
+            "[yellow]No boards have been checked yet.[/yellow]\n"
+            "Run 'taskcards-monitor check BOARD_ID' to monitor your first board."
+        )
+        return
+
+    # Find all state files
+    state_files = sorted(state_dir.glob("*.json"))
+
+    if not state_files:
+        console.print(
+            "[yellow]No boards have been checked yet.[/yellow]\n"
+            "Run 'taskcards-monitor check BOARD_ID' to monitor your first board."
+        )
+        return
+
+    # Load information from each state file
+    boards_info = []
+    for state_file in state_files:
+        board_id = state_file.stem  # filename without .json extension
+        try:
+            with open(state_file) as f:
+                data = json.load(f)
+                timestamp = data.get("timestamp", "Unknown")
+                columns_count = len(data.get("columns", {}))
+                cards_count = len(data.get("cards", {}))
+
+                boards_info.append(
+                    {
+                        "board_id": board_id,
+                        "timestamp": timestamp,
+                        "columns": columns_count,
+                        "cards": cards_count,
+                    }
+                )
+        except (json.JSONDecodeError, KeyError):
+            # Skip malformed files
+            continue
+
+    if not boards_info:
+        console.print("[yellow]No valid board states found.[/yellow]")
+        return
+
+    # Display the boards table
+    console.print()
+    table = create_table(
+        f"Monitored Boards ({len(boards_info)} total)",
+        "bold blue",
+        [
+            {"name": "Board ID", "style": "cyan"},
+            {"name": "Last Checked", "style": "dim"},
+            {"name": "Columns", "style": "green", "justify": "right"},
+            {"name": "Cards", "style": "magenta", "justify": "right"},
+        ],
+        [
+            (
+                board["board_id"],
+                board["timestamp"],
+                str(board["columns"]),
+                str(board["cards"]),
+            )
+            for board in boards_info
+        ],
+    )
+    console.print(table)
+    console.print()
+    console.print(
+        "[dim]Tip: Use 'taskcards-monitor show BOARD_ID' to see detailed state for a specific board[/dim]\n"
+    )
 
 
 @main.command()
