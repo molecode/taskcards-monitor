@@ -156,16 +156,52 @@ def display_changes(changes: dict) -> None:
     if changes["cards_added"]:
         console.print("[bold green]Cards Added:[/bold green]\n")
         for card in changes["cards_added"]:
-            panel_content = f"[bold]{card['title']}[/bold]\n[dim]Column: {card['column']}[/dim]"
-            console.print(Panel(panel_content, border_style="green", padding=(0, 2)))
+            # Build panel content with title, column, and content
+            panel_text = Text()
+            panel_text.append(card["title"], style="bold")
+            panel_text.append(f"\n{card['column']}", style="dim")
+
+            # Add content if present
+            if card.get("content"):
+                panel_text.append("\n\n")
+                # Show content with green prefix
+                for line in card["content"].split("\n")[:10]:  # Limit to 10 lines
+                    panel_text.append("+ ", style="green")
+                    panel_text.append(line, style="green")
+                    panel_text.append("\n")
+                if len(card["content"].split("\n")) > 10:
+                    panel_text.append(
+                        f"... ({len(card['content'].split('\n')) - 10} more lines)",
+                        style="green dim",
+                    )
+
+            console.print(Panel(panel_text, border_style="green", padding=(0, 2)))
         console.print()
 
     # Cards removed - show as red panels
     if changes["cards_removed"]:
         console.print("[bold red]Cards Removed:[/bold red]\n")
         for card in changes["cards_removed"]:
-            panel_content = f"[bold]{card['title']}[/bold]\n[dim]Column: {card['column']}[/dim]"
-            console.print(Panel(panel_content, border_style="red", padding=(0, 2)))
+            # Build panel content with title, column, and content
+            panel_text = Text()
+            panel_text.append(card["title"], style="bold")
+            panel_text.append(f"\n{card['column']}", style="dim")
+
+            # Add content if present
+            if card.get("content"):
+                panel_text.append("\n\n")
+                # Show content with red prefix
+                for line in card["content"].split("\n")[:10]:  # Limit to 10 lines
+                    panel_text.append("- ", style="red")
+                    panel_text.append(line, style="red dim")
+                    panel_text.append("\n")
+                if len(card["content"].split("\n")) > 10:
+                    panel_text.append(
+                        f"... ({len(card['content'].split('\n')) - 10} more lines)",
+                        style="red dim",
+                    )
+
+            console.print(Panel(panel_text, border_style="red", padding=(0, 2)))
         console.print()
 
     # Cards moved - show as cyan panels

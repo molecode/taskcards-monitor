@@ -220,6 +220,7 @@ class BoardMonitor:
                     "id": card_id,
                     "title": card["title"],
                     "column": column_name,
+                    "content": card.get("description", ""),
                 }
             )
 
@@ -232,6 +233,7 @@ class BoardMonitor:
                     "id": card_id,
                     "title": card["title"],
                     "column": column_name,
+                    "content": card.get("description", ""),
                 }
             )
 
