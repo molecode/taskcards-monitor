@@ -8,6 +8,7 @@ Monitor [TaskCards](https://www.taskcards.de) boards for changes (added/removed 
 - Detect added/removed cards
 - Detect added/removed/renamed columns
 - Track card movements between columns
+- **Detect card content changes** (card descriptions)
 - Uses Playwright browser automation
 - Persistent state tracking
 
@@ -188,7 +189,6 @@ taskcards_monitor/
 Planned features (not yet implemented):
 - Email notifications
 - Change history tracking
-- Diff view for card content changes
 
 ## Contributing
 

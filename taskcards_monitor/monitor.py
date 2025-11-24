@@ -169,6 +169,7 @@ class BoardMonitor:
             "cards_added": [],
             "cards_removed": [],
             "cards_moved": [],
+            "cards_content_changed": [],
         }
 
         # Detect column changes
@@ -234,7 +235,7 @@ class BoardMonitor:
                 }
             )
 
-        # Moved cards (existing cards that changed columns)
+        # Moved cards and content changes (existing cards)
         for card_id in prev_card_ids & curr_card_ids:
             prev_card = previous.cards[card_id]
             curr_card = current.cards[card_id]
@@ -242,6 +243,7 @@ class BoardMonitor:
             prev_col_id = prev_card["column_id"]
             curr_col_id = curr_card["column_id"]
 
+            # Check if card moved to a different column
             if prev_col_id != curr_col_id:
                 prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
                 curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
@@ -252,6 +254,22 @@ class BoardMonitor:
                         "title": curr_card["title"],
                         "from_column": prev_col_name,
                         "to_column": curr_col_name,
+                    }
+                )
+
+            # Check if card content (description) changed
+            prev_description = prev_card.get("description", "")
+            curr_description = curr_card.get("description", "")
+
+            if prev_description != curr_description:
+                col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
+                changes["cards_content_changed"].append(
+                    {
+                        "id": card_id,
+                        "title": curr_card["title"],
+                        "column": col_name,
+                        "old_content": prev_description,
+                        "new_content": curr_description,
                     }
                 )
 

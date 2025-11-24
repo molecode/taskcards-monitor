@@ -198,6 +198,7 @@ class TestCLI:
             "cards_added": [{"id": "card2", "title": "Task 2", "column": "To Do"}],
             "cards_removed": [],
             "cards_moved": [],
+            "cards_content_changed": [],
         }
 
         mock_fetcher = MagicMock()
@@ -484,6 +485,7 @@ class TestDisplayFunctions:
             "cards_added": [],
             "cards_removed": [],
             "cards_moved": [],
+            "cards_content_changed": [],
         }
 
         display_changes(changes)

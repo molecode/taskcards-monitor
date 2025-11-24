@@ -293,6 +293,7 @@ class TestBoardMonitor:
         assert len(changes["cards_added"]) == 0
         assert len(changes["cards_removed"]) == 0
         assert len(changes["cards_moved"]) == 0
+        assert len(changes["cards_content_changed"]) == 0
 
     def test_detect_columns_added(self):
         """Test detecting when columns are added."""
@@ -522,3 +523,62 @@ class TestBoardMonitor:
         assert len(changes["cards_added"]) == 1  # card3
         assert len(changes["cards_removed"]) == 1  # card2
         assert len(changes["cards_moved"]) == 1  # card1
+
+    def test_detect_cards_content_changed(self):
+        """Test detecting when card content/description changes."""
+        prev_data = {
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "description": "Original content",
+                    "kanbanPosition": {"listId": "col1", "position": 0},
+                }
+            ],
+        }
+
+        curr_data = {
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "description": "Updated content",
+                    "kanbanPosition": {"listId": "col1", "position": 0},
+                }
+            ],
+        }
+
+        previous = BoardState(prev_data)
+        current = BoardState(curr_data)
+        monitor = BoardMonitor("board123")
+        changes = monitor.detect_changes(current, previous)
+
+        assert len(changes["cards_content_changed"]) == 1
+        assert changes["cards_content_changed"][0]["id"] == "card1"
+        assert changes["cards_content_changed"][0]["title"] == "Task 1"
+        assert changes["cards_content_changed"][0]["column"] == "To Do"
+        assert changes["cards_content_changed"][0]["old_content"] == "Original content"
+        assert changes["cards_content_changed"][0]["new_content"] == "Updated content"
+
+    def test_detect_no_changes_card_content_unchanged(self):
+        """Test that unchanged card content doesn't trigger a change."""
+        data = {
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "description": "Same content",
+                    "kanbanPosition": {"listId": "col1", "position": 0},
+                }
+            ],
+        }
+
+        previous = BoardState(data)
+        current = BoardState(data)
+        monitor = BoardMonitor("board123")
+        changes = monitor.detect_changes(current, previous)
+
+        assert len(changes["cards_content_changed"]) == 0

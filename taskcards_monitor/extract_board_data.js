@@ -74,10 +74,17 @@
                 cardTitle = cardEl.textContent.trim().substring(0, 100);
             }
 
+            // Extract card content/description
+            let cardDescription = '';
+            const cardContent = cardEl.querySelector('.board-card-content');
+            if (cardContent) {
+                cardDescription = cardContent.textContent.trim();
+            }
+
             data.cards.push({
                 id: cardId,
                 title: cardTitle,
-                description: '',
+                description: cardDescription,
                 created: null,
                 modified: null,
                 kanbanPosition: {
