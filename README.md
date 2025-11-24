@@ -1,6 +1,6 @@
 # taskcards-monitor
 
-Monitor TaskCards boards (https://www.taskcards.de) for changes (added/removed cards and columns) using browser automation.
+Monitor [TaskCards](https://www.taskcards.de) boards for changes (added/removed cards and columns) using browser automation.
 
 ## Features
 
