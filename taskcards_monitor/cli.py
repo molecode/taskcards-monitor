@@ -8,11 +8,54 @@ import click
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from .fetcher import TaskCardsFetcher
 from .monitor import BoardMonitor, BoardState
 
 console = Console()
+
+
+def create_content_diff(old_content: str, new_content: str, max_lines: int = 10) -> Text:
+    """Create a colored diff view for content changes.
+
+    Args:
+        old_content: Previous content
+        new_content: New content
+        max_lines: Maximum number of lines to show
+
+    Returns:
+        Rich Text object with colored diff
+    """
+    text = Text()
+
+    # Split into lines for comparison
+    old_lines = old_content.split("\n") if old_content else []
+    new_lines = new_content.split("\n") if new_content else []
+
+    # Simple line-by-line diff
+    max_old = min(len(old_lines), max_lines)
+    max_new = min(len(new_lines), max_lines)
+
+    # Show removed lines
+    if old_lines:
+        for line in old_lines[:max_old]:
+            text.append("- ", style="red")
+            text.append(line, style="red dim")
+            text.append("\n")
+        if len(old_lines) > max_lines:
+            text.append(f"... ({len(old_lines) - max_lines} more lines removed)\n", style="red dim")
+
+    # Show added lines
+    if new_lines:
+        for line in new_lines[:max_new]:
+            text.append("+ ", style="green")
+            text.append(line, style="green")
+            text.append("\n")
+        if len(new_lines) > max_lines:
+            text.append(f"... ({len(new_lines) - max_lines} more lines added)\n", style="green dim")
+
+    return text
 
 
 def create_table(title: str, header_style: str, columns: list[dict], rows: list) -> Table:
@@ -109,68 +152,49 @@ def display_changes(changes: dict) -> None:
         console.print(table)
         console.print()
 
-    # Cards added
+    # Cards added - show as green panels
     if changes["cards_added"]:
-        table = create_table(
-            "Cards Added",
-            "bold green",
-            [{"name": "Title", "style": "green"}, {"name": "Column", "style": "dim"}],
-            [(card["title"], card["column"]) for card in changes["cards_added"]],
-        )
-        console.print(table)
+        console.print("[bold green]Cards Added:[/bold green]\n")
+        for card in changes["cards_added"]:
+            panel_content = f"[bold]{card['title']}[/bold]\n[dim]Column: {card['column']}[/dim]"
+            console.print(Panel(panel_content, border_style="green", padding=(0, 2)))
         console.print()
 
-    # Cards removed
+    # Cards removed - show as red panels
     if changes["cards_removed"]:
-        table = create_table(
-            "Cards Removed",
-            "bold red",
-            [{"name": "Title", "style": "red"}, {"name": "Column", "style": "dim"}],
-            [(card["title"], card["column"]) for card in changes["cards_removed"]],
-        )
-        console.print(table)
+        console.print("[bold red]Cards Removed:[/bold red]\n")
+        for card in changes["cards_removed"]:
+            panel_content = f"[bold]{card['title']}[/bold]\n[dim]Column: {card['column']}[/dim]"
+            console.print(Panel(panel_content, border_style="red", padding=(0, 2)))
         console.print()
 
-    # Cards moved
+    # Cards moved - show as cyan panels
     if changes["cards_moved"]:
-        table = create_table(
-            "Cards Moved",
-            "bold cyan",
-            [
-                {"name": "Title", "style": "cyan"},
-                {"name": "From", "style": "dim"},
-                {"name": "To", "style": "cyan"},
-            ],
-            [
-                (card["title"], card["from_column"], card["to_column"])
-                for card in changes["cards_moved"]
-            ],
-        )
-        console.print(table)
+        console.print("[bold cyan]Cards Moved:[/bold cyan]\n")
+        for card in changes["cards_moved"]:
+            panel_content = (
+                f"[bold]{card['title']}[/bold]\n"
+                f"[dim]From:[/dim] {card['from_column']} [dim]→[/dim] [cyan]{card['to_column']}[/cyan]"
+            )
+            console.print(Panel(panel_content, border_style="cyan", padding=(0, 2)))
         console.print()
 
-    # Cards content changed
+    # Cards content changed - show as yellow panels with diff
     if changes["cards_content_changed"]:
-        table = create_table(
-            "Cards Content Changed",
-            "bold yellow",
-            [
-                {"name": "Title", "style": "yellow"},
-                {"name": "Column", "style": "dim"},
-                {"name": "Content Preview", "style": "dim", "width": 40, "overflow": "ellipsis"},
-            ],
-            [
-                (
-                    card["title"],
-                    card["column"],
-                    card["new_content"][:100] + "..."
-                    if len(card["new_content"]) > 100
-                    else card["new_content"],
-                )
-                for card in changes["cards_content_changed"]
-            ],
-        )
-        console.print(table)
+        console.print("[bold yellow]Cards Content Changed:[/bold yellow]\n")
+        for card in changes["cards_content_changed"]:
+            # Create header
+            header = f"[bold]{card['title']}[/bold] [dim]in {card['column']}[/dim]"
+
+            # Create diff content
+            diff = create_content_diff(card["old_content"], card["new_content"])
+
+            # Combine header and diff
+            panel_content = Text()
+            panel_content.append(header + "\n\n")
+            panel_content.append(diff)
+
+            console.print(Panel(panel_content, border_style="yellow", padding=(0, 2)))
         console.print()
 
 
