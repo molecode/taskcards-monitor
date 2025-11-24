@@ -31,6 +31,15 @@ packages = ["taskcards_monitor"]
 [tool.hatch.build.targets.wheel.force-include]
 "taskcards_monitor/extract_board_data.js" = "taskcards_monitor/extract_board_data.js"
 
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=taskcards_monitor",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "-v",
+]
+testpaths = ["tests"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
