@@ -46,6 +46,7 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
 - `check BOARD_ID` - Check a board for changes and save state
 - `show BOARD_ID` - Show the current saved state
+- `list` - List all boards that have been checked
 - `inspect BOARD_ID` - Explore a board with detailed output (debugging, does NOT save state)
 
 ### Options
@@ -65,6 +66,9 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN --no-headless
 
 # Show saved state
 uv run taskcards-monitor show BOARD_ID
+
+# List all monitored boards
+uv run taskcards-monitor list
 
 # Inspect board with detailed output (debugging, doesn't save state)
 uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
