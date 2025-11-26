@@ -16,6 +16,9 @@ taskcards-monitor = "taskcards_monitor.cli:main"
 dev = [
     "ruff==0.14.6",
     "pre-commit==4.5.0",
+    "pytest==8.3.4",
+    "pytest-mock==3.14.0",
+    "pytest-cov==6.0.0",
 ]
 
 [build-system]
@@ -27,6 +30,15 @@ packages = ["taskcards_monitor"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "taskcards_monitor/extract_board_data.js" = "taskcards_monitor/extract_board_data.js"
+
+[tool.pytest.ini_options]
+addopts = [
+    "--cov=taskcards_monitor",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "-v",
+]
+testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
