@@ -147,6 +147,9 @@ class BoardMonitor:
         """
         Detect changes between current and previous board states.
 
+        Uses NAME-BASED matching instead of ID-based matching because TaskCards
+        reassigns column IDs when columns are inserted in the middle.
+
         Args:
             current: Current board state
             previous: Previous board state (None if first run)
@@ -166,90 +169,161 @@ class BoardMonitor:
             "columns_added": [],
             "columns_removed": [],
             "columns_renamed": [],
+            "columns_moved": [],
             "cards_added": [],
             "cards_removed": [],
             "cards_moved": [],
         }
 
-        # Detect column changes
-        prev_col_ids = set(previous.columns.keys())
-        curr_col_ids = set(current.columns.keys())
+        # Build name-based mappings (since TaskCards reassigns IDs)
+        prev_names = {data["name"]: (col_id, data) for col_id, data in previous.columns.items()}
+        curr_names = {data["name"]: (col_id, data) for col_id, data in current.columns.items()}
 
-        # Added columns
-        for col_id in curr_col_ids - prev_col_ids:
+        prev_name_set = set(prev_names.keys())
+        curr_name_set = set(curr_names.keys())
+
+        # Added columns (new names that didn't exist before)
+        for col_name in curr_name_set - prev_name_set:
+            col_id, col_data = curr_names[col_name]
             changes["columns_added"].append(
                 {
                     "id": col_id,
-                    "name": current.columns[col_id]["name"],
+                    "name": col_name,
+                    "position": col_data["position"],
                 }
             )
 
-        # Removed columns
-        for col_id in prev_col_ids - curr_col_ids:
+        # Removed columns (names that no longer exist)
+        for col_name in prev_name_set - curr_name_set:
+            col_id, col_data = prev_names[col_name]
             changes["columns_removed"].append(
                 {
                     "id": col_id,
-                    "name": previous.columns[col_id]["name"],
+                    "name": col_name,
+                    "position": col_data["position"],
                 }
             )
 
-        # Renamed columns
-        for col_id in prev_col_ids & curr_col_ids:
-            prev_name = previous.columns[col_id]["name"]
-            curr_name = current.columns[col_id]["name"]
-            if prev_name != curr_name:
-                changes["columns_renamed"].append(
+        # Existing columns (same name) - check for position changes
+        for col_name in prev_name_set & curr_name_set:
+            prev_col_id, prev_col = prev_names[col_name]
+            curr_col_id, curr_col = curr_names[col_name]
+
+            prev_pos = prev_col["position"]
+            curr_pos = curr_col["position"]
+
+            # Moved columns (position changed)
+            if prev_pos != curr_pos:
+                changes["columns_moved"].append(
                     {
-                        "id": col_id,
-                        "old_name": prev_name,
-                        "new_name": curr_name,
+                        "id": curr_col_id,
+                        "name": col_name,
+                        "old_position": prev_pos,
+                        "new_position": curr_pos,
                     }
                 )
 
-        # Detect card changes
-        prev_card_ids = set(previous.cards.keys())
-        curr_card_ids = set(current.cards.keys())
+        # Detect renames: if a column at position X was removed and another added at position X
+        # AND they have the same ID, it's likely a rename
+        removed_by_position = {}
+        for name in prev_name_set - curr_name_set:
+            col_id, col_data = prev_names[name]
+            pos = col_data["position"]
+            removed_by_position[pos] = (name, col_id)
 
-        # Added cards
-        for card_id in curr_card_ids - prev_card_ids:
-            card = current.cards[card_id]
-            column_name = current.columns.get(card["column_id"], {}).get("name", "Unknown")
+        added_by_position = {}
+        for name in curr_name_set - prev_name_set:
+            col_id, col_data = curr_names[name]
+            pos = col_data["position"]
+            added_by_position[pos] = (name, col_id)
+
+        # Find positions where both a remove and add occurred
+        rename_positions = set(removed_by_position.keys()) & set(added_by_position.keys())
+        for pos in rename_positions:
+            old_name, old_id = removed_by_position[pos]
+            new_name, new_id = added_by_position[pos]
+
+            # Only treat as rename if IDs match (same column, different name)
+            # If IDs differ, it's a true remove+add (one column deleted, another added)
+            if old_id == new_id:
+                changes["columns_renamed"].append(
+                    {
+                        "id": new_id,
+                        "old_name": old_name,
+                        "new_name": new_name,
+                        "position": pos,
+                    }
+                )
+
+                # Remove from added and removed lists
+                changes["columns_added"] = [
+                    c for c in changes["columns_added"] if c["name"] != new_name
+                ]
+                changes["columns_removed"] = [
+                    c for c in changes["columns_removed"] if c["name"] != old_name
+                ]
+
+        # Detect card changes (use TITLE-based matching since IDs also change)
+        # Build title-based mappings for cards
+        prev_card_titles = {}
+        for card_id, card_data in previous.cards.items():
+            col_name = previous.columns.get(card_data["column_id"], {}).get("name", "Unknown")
+            title = card_data["title"]
+            prev_card_titles[title] = {
+                "id": card_id,
+                "column_name": col_name,
+                "data": card_data,
+            }
+
+        curr_card_titles = {}
+        for card_id, card_data in current.cards.items():
+            col_name = current.columns.get(card_data["column_id"], {}).get("name", "Unknown")
+            title = card_data["title"]
+            curr_card_titles[title] = {
+                "id": card_id,
+                "column_name": col_name,
+                "data": card_data,
+            }
+
+        prev_title_set = set(prev_card_titles.keys())
+        curr_title_set = set(curr_card_titles.keys())
+
+        # Added cards (new titles)
+        for title in curr_title_set - prev_title_set:
+            card_info = curr_card_titles[title]
             changes["cards_added"].append(
                 {
-                    "id": card_id,
-                    "title": card["title"],
-                    "column": column_name,
+                    "id": card_info["id"],
+                    "title": title,
+                    "column": card_info["column_name"],
                 }
             )
 
-        # Removed cards
-        for card_id in prev_card_ids - curr_card_ids:
-            card = previous.cards[card_id]
-            column_name = previous.columns.get(card["column_id"], {}).get("name", "Unknown")
+        # Removed cards (titles that no longer exist)
+        for title in prev_title_set - curr_title_set:
+            card_info = prev_card_titles[title]
             changes["cards_removed"].append(
                 {
-                    "id": card_id,
-                    "title": card["title"],
-                    "column": column_name,
+                    "id": card_info["id"],
+                    "title": title,
+                    "column": card_info["column_name"],
                 }
             )
 
         # Moved cards (existing cards that changed columns)
-        for card_id in prev_card_ids & curr_card_ids:
-            prev_card = previous.cards[card_id]
-            curr_card = current.cards[card_id]
+        for title in prev_title_set & curr_title_set:
+            prev_info = prev_card_titles[title]
+            curr_info = curr_card_titles[title]
 
-            prev_col_id = prev_card["column_id"]
-            curr_col_id = curr_card["column_id"]
+            prev_col_name = prev_info["column_name"]
+            curr_col_name = curr_info["column_name"]
 
-            if prev_col_id != curr_col_id:
-                prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
-                curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
-
+            # Only report as "moved" if the column NAME changed
+            if prev_col_name != curr_col_name:
                 changes["cards_moved"].append(
                     {
-                        "id": card_id,
-                        "title": curr_card["title"],
+                        "id": curr_info["id"],
+                        "title": title,
                         "from_column": prev_col_name,
                         "to_column": curr_col_name,
                     }
