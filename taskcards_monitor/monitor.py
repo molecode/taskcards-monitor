@@ -148,10 +148,12 @@ class BoardMonitor:
         """Build a mapping of card titles to card info for a board state."""
         card_titles = {}
         for card_id, card_data in state.cards.items():
-            col_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
+            col_id = card_data["column_id"]
+            col_name = state.columns.get(col_id, {}).get("name", "Unknown")
             title = card_data["title"]
             card_titles[title] = {
                 "id": card_id,
+                "column_id": col_id,
                 "column_name": col_name,
                 "data": card_data,
             }
@@ -314,11 +316,16 @@ class BoardMonitor:
             prev_info = prev_card_titles[title]
             curr_info = curr_card_titles[title]
 
-            prev_col_name = prev_info["column_name"]
-            curr_col_name = curr_info["column_name"]
+            prev_col_id = prev_info["column_id"]
+            curr_col_id = curr_info["column_id"]
 
-            # Only report as "moved" if the column NAME changed
-            if prev_col_name != curr_col_name:
+            # Only report as "moved" if the column ID changed (not just the name)
+            # If the column was renamed, the card stayed in the same column (same ID)
+            if prev_col_id != curr_col_id:
+                # Get the column names from the current state for display
+                prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
+                curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
+
                 changes["cards_moved"].append(
                     {
                         "id": curr_info["id"],
