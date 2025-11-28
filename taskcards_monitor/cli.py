@@ -62,6 +62,7 @@ def display_changes(changes: dict) -> None:
             changes["columns_added"],
             changes["columns_removed"],
             changes["columns_renamed"],
+            changes["columns_moved"],
             changes["cards_added"],
             changes["cards_removed"],
             changes["cards_moved"],
@@ -80,8 +81,11 @@ def display_changes(changes: dict) -> None:
         table = create_table(
             "Columns Added",
             "bold green",
-            [{"name": "Name", "style": "green"}],
-            [(col["name"],) for col in changes["columns_added"]],
+            [
+                {"name": "Name", "style": "green"},
+                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
+            ],
+            [(col["name"], str(col["position"])) for col in changes["columns_added"]],
         )
         console.print(table)
         console.print()
@@ -91,8 +95,11 @@ def display_changes(changes: dict) -> None:
         table = create_table(
             "Columns Removed",
             "bold red",
-            [{"name": "Name", "style": "red"}],
-            [(col["name"],) for col in changes["columns_removed"]],
+            [
+                {"name": "Name", "style": "red"},
+                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
+            ],
+            [(col["name"], str(col["position"])) for col in changes["columns_removed"]],
         )
         console.print(table)
         console.print()
@@ -102,8 +109,33 @@ def display_changes(changes: dict) -> None:
         table = create_table(
             "Columns Renamed",
             "bold yellow",
-            [{"name": "Old Name", "style": "dim"}, {"name": "New Name", "style": "yellow"}],
-            [(col["old_name"], col["new_name"]) for col in changes["columns_renamed"]],
+            [
+                {"name": "Old Name", "style": "dim"},
+                {"name": "New Name", "style": "yellow"},
+                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
+            ],
+            [
+                (col["old_name"], col["new_name"], str(col["position"]))
+                for col in changes["columns_renamed"]
+            ],
+        )
+        console.print(table)
+        console.print()
+
+    # Columns moved (position changed)
+    if changes["columns_moved"]:
+        table = create_table(
+            "Columns Moved",
+            "bold blue",
+            [
+                {"name": "Name", "style": "blue"},
+                {"name": "From", "style": "dim", "justify": "right", "width": 6},
+                {"name": "To", "style": "blue", "justify": "right", "width": 6},
+            ],
+            [
+                (col["name"], str(col["old_position"]), str(col["new_position"]))
+                for col in changes["columns_moved"]
+            ],
         )
         console.print(table)
         console.print()
