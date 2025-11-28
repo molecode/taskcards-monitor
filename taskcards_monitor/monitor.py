@@ -183,26 +183,34 @@ class BoardMonitor:
         curr_name_set = set(curr_names.keys())
 
         # Added columns (new names that didn't exist before)
+        # Build position mapping at the same time for rename detection
+        added_by_position = {}
         for col_name in curr_name_set - prev_name_set:
             col_id, col_data = curr_names[col_name]
+            pos = col_data["position"]
             changes["columns_added"].append(
                 {
                     "id": col_id,
                     "name": col_name,
-                    "position": col_data["position"],
+                    "position": pos,
                 }
             )
+            added_by_position[pos] = (col_name, col_id)
 
         # Removed columns (names that no longer exist)
+        # Build position mapping at the same time for rename detection
+        removed_by_position = {}
         for col_name in prev_name_set - curr_name_set:
             col_id, col_data = prev_names[col_name]
+            pos = col_data["position"]
             changes["columns_removed"].append(
                 {
                     "id": col_id,
                     "name": col_name,
-                    "position": col_data["position"],
+                    "position": pos,
                 }
             )
+            removed_by_position[pos] = (col_name, col_id)
 
         # Existing columns (same name) - check for position changes
         for col_name in prev_name_set & curr_name_set:
@@ -222,20 +230,6 @@ class BoardMonitor:
                         "new_position": curr_pos,
                     }
                 )
-
-        # Detect renames: if a column at position X was removed and another added at position X
-        # AND they have the same ID, it's likely a rename
-        removed_by_position = {}
-        for name in prev_name_set - curr_name_set:
-            col_id, col_data = prev_names[name]
-            pos = col_data["position"]
-            removed_by_position[pos] = (name, col_id)
-
-        added_by_position = {}
-        for name in curr_name_set - prev_name_set:
-            col_id, col_data = curr_names[name]
-            pos = col_data["position"]
-            added_by_position[pos] = (name, col_id)
 
         # Find positions where both a remove and add occurred
         rename_positions = set(removed_by_position.keys()) & set(added_by_position.keys())
