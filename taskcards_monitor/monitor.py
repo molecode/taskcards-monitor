@@ -95,6 +95,20 @@ class BoardState:
         return state
 
 
+def _build_card_title_mapping(state: BoardState) -> dict[str, dict[str, Any]]:
+    """Build a mapping of card titles to card info for a board state."""
+    card_titles = {}
+    for card_id, card_data in state.cards.items():
+        col_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
+        title = card_data["title"]
+        card_titles[title] = {
+            "id": card_id,
+            "column_name": col_name,
+            "data": card_data,
+        }
+    return card_titles
+
+
 class BoardMonitor:
     """Monitors a TaskCards board for changes."""
 
@@ -233,6 +247,11 @@ class BoardMonitor:
 
         # Find positions where both a remove and add occurred
         rename_positions = set(removed_by_position.keys()) & set(added_by_position.keys())
+
+        # Track names that were actually renamed (not just removed/added)
+        renamed_old_names = set()
+        renamed_new_names = set()
+
         for pos in rename_positions:
             old_name, old_id = removed_by_position[pos]
             new_name, new_id = added_by_position[pos]
@@ -248,32 +267,22 @@ class BoardMonitor:
                         "position": pos,
                     }
                 )
+                renamed_old_names.add(old_name)
+                renamed_new_names.add(new_name)
 
-                # Remove from added and removed lists
-                changes["columns_added"] = [
-                    c for c in changes["columns_added"] if c["name"] != new_name
-                ]
-                changes["columns_removed"] = [
-                    c for c in changes["columns_removed"] if c["name"] != old_name
-                ]
+        # Remove renamed columns from added and removed lists (if any renames occurred)
+        if renamed_new_names:
+            changes["columns_added"] = [
+                c for c in changes["columns_added"] if c["name"] not in renamed_new_names
+            ]
+        if renamed_old_names:
+            changes["columns_removed"] = [
+                c for c in changes["columns_removed"] if c["name"] not in renamed_old_names
+            ]
 
         # Detect card changes (use TITLE-based matching since IDs also change)
-        # Helper function to build title-based card mapping
-        def build_card_title_mapping(state: BoardState) -> dict[str, dict[str, Any]]:
-            """Build a mapping of card titles to card info for a board state."""
-            card_titles = {}
-            for card_id, card_data in state.cards.items():
-                col_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
-                title = card_data["title"]
-                card_titles[title] = {
-                    "id": card_id,
-                    "column_name": col_name,
-                    "data": card_data,
-                }
-            return card_titles
-
-        prev_card_titles = build_card_title_mapping(previous)
-        curr_card_titles = build_card_title_mapping(current)
+        prev_card_titles = _build_card_title_mapping(previous)
+        curr_card_titles = _build_card_title_mapping(current)
 
         prev_title_set = set(prev_card_titles.keys())
         curr_title_set = set(curr_card_titles.keys())
