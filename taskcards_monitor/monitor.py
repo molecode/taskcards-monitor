@@ -95,20 +95,6 @@ class BoardState:
         return state
 
 
-def _build_card_title_mapping(state: BoardState) -> dict[str, dict[str, Any]]:
-    """Build a mapping of card titles to card info for a board state."""
-    card_titles = {}
-    for card_id, card_data in state.cards.items():
-        col_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
-        title = card_data["title"]
-        card_titles[title] = {
-            "id": card_id,
-            "column_name": col_name,
-            "data": card_data,
-        }
-    return card_titles
-
-
 class BoardMonitor:
     """Monitors a TaskCards board for changes."""
 
@@ -156,6 +142,20 @@ class BoardMonitor:
         """
         with open(self.state_file, "w") as f:
             json.dump(state.to_dict(), f, indent=2)
+
+    @staticmethod
+    def _build_card_title_mapping(state: BoardState) -> dict[str, dict[str, Any]]:
+        """Build a mapping of card titles to card info for a board state."""
+        card_titles = {}
+        for card_id, card_data in state.cards.items():
+            col_name = state.columns.get(card_data["column_id"], {}).get("name", "Unknown")
+            title = card_data["title"]
+            card_titles[title] = {
+                "id": card_id,
+                "column_name": col_name,
+                "data": card_data,
+            }
+        return card_titles
 
     def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
         """
@@ -281,8 +281,8 @@ class BoardMonitor:
             ]
 
         # Detect card changes (use TITLE-based matching since IDs also change)
-        prev_card_titles = _build_card_title_mapping(previous)
-        curr_card_titles = _build_card_title_mapping(current)
+        prev_card_titles = self._build_card_title_mapping(previous)
+        curr_card_titles = self._build_card_title_mapping(current)
 
         prev_title_set = set(prev_card_titles.keys())
         curr_title_set = set(curr_card_titles.keys())
