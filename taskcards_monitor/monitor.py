@@ -159,44 +159,52 @@ class BoardMonitor:
             }
         return card_titles
 
-    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
-        """
-        Detect changes between current and previous board states.
+    @staticmethod
+    def _build_column_name_mappings(
+        state: BoardState,
+    ) -> tuple[dict[str, tuple[str, dict]], set[str]]:
+        """Build name-based column mappings and name set."""
+        names = {data["name"]: (col_id, data) for col_id, data in state.columns.items()}
+        return names, set(names.keys())
 
-        Uses NAME-BASED matching instead of ID-based matching because TaskCards
-        reassigns column IDs when columns are inserted in the middle.
+    @staticmethod
+    def _filter_renamed_items(
+        items: list[dict], renamed_names: set[str], name_key: str
+    ) -> list[dict]:
+        """Filter out renamed items from added/removed lists."""
+        if not renamed_names:
+            return items
+        return [item for item in items if item[name_key] not in renamed_names]
+
+    def _detect_column_changes(
+        self,
+        current: BoardState,
+        previous: BoardState,
+        prev_names: dict[str, tuple[str, dict]],
+        curr_names: dict[str, tuple[str, dict]],
+        prev_name_set: set[str],
+        curr_name_set: set[str],
+    ) -> dict[str, list]:
+        """
+        Detect column changes (added, removed, renamed, moved).
 
         Args:
             current: Current board state
-            previous: Previous board state (None if first run)
+            previous: Previous board state
+            prev_names: Previous column name mappings
+            curr_names: Current column name mappings
+            prev_name_set: Set of previous column names
+            curr_name_set: Set of current column names
 
         Returns:
-            Dictionary containing detected changes
+            Dictionary with column change lists
         """
-        if previous is None:
-            return {
-                "is_first_run": True,
-                "columns_count": len(current.columns),
-                "cards_count": len(current.cards),
-            }
-
         changes = {
-            "is_first_run": False,
             "columns_added": [],
             "columns_removed": [],
             "columns_renamed": [],
             "columns_moved": [],
-            "cards_added": [],
-            "cards_removed": [],
-            "cards_moved": [],
         }
-
-        # Build name-based mappings (since TaskCards reassigns IDs)
-        prev_names = {data["name"]: (col_id, data) for col_id, data in previous.columns.items()}
-        curr_names = {data["name"]: (col_id, data) for col_id, data in current.columns.items()}
-
-        prev_name_set = set(prev_names.keys())
-        curr_name_set = set(curr_names.keys())
 
         # Added columns (new names that didn't exist before)
         # Build position mapping at the same time for rename detection
@@ -273,59 +281,107 @@ class BoardMonitor:
                 renamed_new_names.add(new_name)
 
         # Remove renamed columns from added and removed lists (if any renames occurred)
-        if renamed_new_names:
-            changes["columns_added"] = [
-                c for c in changes["columns_added"] if c["name"] not in renamed_new_names
-            ]
-        if renamed_old_names:
-            changes["columns_removed"] = [
-                c for c in changes["columns_removed"] if c["name"] not in renamed_old_names
-            ]
+        changes["columns_added"] = self._filter_renamed_items(
+            changes["columns_added"], renamed_new_names, "name"
+        )
+        changes["columns_removed"] = self._filter_renamed_items(
+            changes["columns_removed"], renamed_old_names, "name"
+        )
 
-        # Detect card changes (use TITLE-based matching since IDs also change)
+        return changes
+
+    def _detect_card_changes(
+        self,
+        current: BoardState,
+        previous: BoardState,
+        column_renames: list[dict],
+        prev_name_set: set,
+        curr_name_set: set,
+    ) -> dict[str, list]:
+        """
+        Detect card changes (added, removed, renamed, moved).
+
+        Args:
+            current: Current board state
+            previous: Previous board state
+            column_renames: List of renamed columns
+            prev_name_set: Set of previous column names
+            curr_name_set: Set of current column names
+
+        Returns:
+            Dictionary with card change lists
+        """
+        changes = {
+            "cards_added": [],
+            "cards_removed": [],
+            "cards_renamed": [],
+            "cards_moved": [],
+        }
+
+        # Build title-based mappings
         prev_card_titles = self._build_card_title_mapping(previous)
         curr_card_titles = self._build_card_title_mapping(current)
 
         prev_title_set = set(prev_card_titles.keys())
         curr_title_set = set(curr_card_titles.keys())
 
-        # Added cards (new titles)
-        for title in curr_title_set - prev_title_set:
-            card_info = curr_card_titles[title]
-            changes["cards_added"].append(
-                {
-                    "id": card_info["id"],
-                    "title": title,
-                    "column": card_info["column_name"],
-                }
-            )
-
-        # Removed cards (titles that no longer exist)
+        # Build ID-based mappings for added/removed cards to detect renames
+        removed_cards_by_id = {}
         for title in prev_title_set - curr_title_set:
             card_info = prev_card_titles[title]
+            card_id = card_info["id"]
             changes["cards_removed"].append(
                 {
-                    "id": card_info["id"],
+                    "id": card_id,
                     "title": title,
                     "column": card_info["column_name"],
                 }
             )
+            removed_cards_by_id[card_id] = (title, card_info)
+
+        # Added cards (new titles) - build ID mapping for rename detection
+        added_cards_by_id = {}
+        for title in curr_title_set - prev_title_set:
+            card_info = curr_card_titles[title]
+            card_id = card_info["id"]
+            changes["cards_added"].append(
+                {
+                    "id": card_id,
+                    "title": title,
+                    "column": card_info["column_name"],
+                }
+            )
+            added_cards_by_id[card_id] = (title, card_info)
+
+        # Build a mapping from previous column names to current column names
+        # This helps us detect if a column was renamed
+        prev_col_name_to_curr_name = {}
+        for col_name in prev_name_set & curr_name_set:
+            prev_col_name_to_curr_name[col_name] = col_name
+
+        # For renamed columns, map old name to new name
+        for rename_info in column_renames:
+            old_name = rename_info["old_name"]
+            new_name = rename_info["new_name"]
+            prev_col_name_to_curr_name[old_name] = new_name
 
         # Moved cards (existing cards that changed columns)
         for title in prev_title_set & curr_title_set:
             prev_info = prev_card_titles[title]
             curr_info = curr_card_titles[title]
 
-            prev_col_id = prev_info["column_id"]
-            curr_col_id = curr_info["column_id"]
+            prev_col_name = prev_info["column_name"]
+            curr_col_name = curr_info["column_name"]
 
-            # Only report as "moved" if the column ID changed (not just the name)
-            # If the column was renamed, the card stayed in the same column (same ID)
-            if prev_col_id != curr_col_id:
-                # Get the column names from the current state for display
-                prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
-                curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
+            # Map the previous column name to what it is now (accounting for renames)
+            expected_col_name = prev_col_name_to_curr_name.get(prev_col_name, prev_col_name)
 
+            # Only report as "moved" if the current column is different from expected
+            # This accounts for:
+            # - Column renames: card stays in renamed column (not a move)
+            # - Column ID changes: card stays in same-named column (not a move)
+            # - Actual moves: card is now in a different column name
+            if curr_col_name != expected_col_name:
                 changes["cards_moved"].append(
                     {
                         "id": curr_info["id"],
@@ -335,4 +391,79 @@ class BoardMonitor:
                     }
                 )
 
+        # Detect renames: if a card ID was removed and the same ID was added with different title
+        # This means the card was renamed (same position/ID, different title)
+        renamed_card_ids = set(removed_cards_by_id.keys()) & set(added_cards_by_id.keys())
+
+        # Track renamed cards to remove them from added/removed lists
+        renamed_old_titles = set()
+        renamed_new_titles = set()
+
+        for card_id in renamed_card_ids:
+            old_title, old_info = removed_cards_by_id[card_id]
+            new_title, new_info = added_cards_by_id[card_id]
+
+            # Same ID and same column = rename (not a remove+add of different cards)
+            if old_info["column_id"] == new_info["column_id"]:
+                changes["cards_renamed"].append(
+                    {
+                        "id": card_id,
+                        "old_title": old_title,
+                        "new_title": new_title,
+                        "column": new_info["column_name"],
+                    }
+                )
+                renamed_old_titles.add(old_title)
+                renamed_new_titles.add(new_title)
+
+        # Remove renamed cards from added and removed lists
+        changes["cards_added"] = self._filter_renamed_items(
+            changes["cards_added"], renamed_new_titles, "title"
+        )
+        changes["cards_removed"] = self._filter_renamed_items(
+            changes["cards_removed"], renamed_old_titles, "title"
+        )
+
         return changes
+
+    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
+        """
+        Detect changes between current and previous board states.
+
+        Uses NAME-BASED matching instead of ID-based matching because TaskCards
+        reassigns column IDs when columns are inserted in the middle.
+
+        Args:
+            current: Current board state
+            previous: Previous board state (None if first run)
+
+        Returns:
+            Dictionary containing detected changes
+        """
+        if previous is None:
+            return {
+                "is_first_run": True,
+                "columns_count": len(current.columns),
+                "cards_count": len(current.cards),
+            }
+
+        # Build column name mappings (used by both column and card detection)
+        prev_names, prev_name_set = self._build_column_name_mappings(previous)
+        curr_names, curr_name_set = self._build_column_name_mappings(current)
+
+        # Detect column changes
+        column_changes = self._detect_column_changes(
+            current, previous, prev_names, curr_names, prev_name_set, curr_name_set
+        )
+
+        # Detect card changes
+        card_changes = self._detect_card_changes(
+            current, previous, column_changes["columns_renamed"], prev_name_set, curr_name_set
+        )
+
+        # Combine all changes
+        return {
+            "is_first_run": False,
+            **column_changes,
+            **card_changes,
+        }

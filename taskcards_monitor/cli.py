@@ -65,6 +65,7 @@ def display_changes(changes: dict) -> None:
             changes["columns_moved"],
             changes["cards_added"],
             changes["cards_removed"],
+            changes["cards_renamed"],
             changes["cards_moved"],
         ]
     )
@@ -158,6 +159,24 @@ def display_changes(changes: dict) -> None:
             "bold red",
             [{"name": "Title", "style": "red"}, {"name": "Column", "style": "dim"}],
             [(card["title"], card["column"]) for card in changes["cards_removed"]],
+        )
+        console.print(table)
+        console.print()
+
+    # Cards renamed
+    if changes["cards_renamed"]:
+        table = create_table(
+            "Cards Renamed",
+            "bold yellow",
+            [
+                {"name": "Old Title", "style": "dim"},
+                {"name": "New Title", "style": "yellow"},
+                {"name": "Column", "style": "dim"},
+            ],
+            [
+                (card["old_title"], card["new_title"], card["column"])
+                for card in changes["cards_renamed"]
+            ],
         )
         console.print(table)
         console.print()

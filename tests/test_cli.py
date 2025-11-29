@@ -198,6 +198,7 @@ class TestCLI:
             "columns_moved": [],
             "cards_added": [{"id": "card2", "title": "Task 2", "column": "To Do"}],
             "cards_removed": [],
+            "cards_renamed": [],
             "cards_moved": [],
         }
 
@@ -485,6 +486,7 @@ class TestDisplayFunctions:
             "columns_moved": [],
             "cards_added": [],
             "cards_removed": [],
+            "cards_renamed": [],
             "cards_moved": [],
         }
 
