@@ -188,6 +188,7 @@ class BoardMonitor:
             "columns_moved": [],
             "cards_added": [],
             "cards_removed": [],
+            "cards_renamed": [],
             "cards_moved": [],
         }
 
@@ -289,43 +290,63 @@ class BoardMonitor:
         prev_title_set = set(prev_card_titles.keys())
         curr_title_set = set(curr_card_titles.keys())
 
-        # Added cards (new titles)
-        for title in curr_title_set - prev_title_set:
-            card_info = curr_card_titles[title]
-            changes["cards_added"].append(
-                {
-                    "id": card_info["id"],
-                    "title": title,
-                    "column": card_info["column_name"],
-                }
-            )
-
-        # Removed cards (titles that no longer exist)
+        # Build ID-based mappings for added/removed cards to detect renames
+        removed_cards_by_id = {}
         for title in prev_title_set - curr_title_set:
             card_info = prev_card_titles[title]
+            card_id = card_info["id"]
             changes["cards_removed"].append(
                 {
-                    "id": card_info["id"],
+                    "id": card_id,
                     "title": title,
                     "column": card_info["column_name"],
                 }
             )
+            removed_cards_by_id[card_id] = (title, card_info)
+
+        # Added cards (new titles) - build ID mapping for rename detection
+        added_cards_by_id = {}
+        for title in curr_title_set - prev_title_set:
+            card_info = curr_card_titles[title]
+            card_id = card_info["id"]
+            changes["cards_added"].append(
+                {
+                    "id": card_id,
+                    "title": title,
+                    "column": card_info["column_name"],
+                }
+            )
+            added_cards_by_id[card_id] = (title, card_info)
+
+        # Build a mapping from previous column names to current column names
+        # This helps us detect if a column was renamed
+        prev_col_name_to_curr_name = {}
+        for col_name in prev_name_set & curr_name_set:
+            prev_col_name_to_curr_name[col_name] = col_name
+
+        # For renamed columns, map old name to new name
+        for rename_info in changes["columns_renamed"]:
+            old_name = rename_info["old_name"]
+            new_name = rename_info["new_name"]
+            prev_col_name_to_curr_name[old_name] = new_name
 
         # Moved cards (existing cards that changed columns)
         for title in prev_title_set & curr_title_set:
             prev_info = prev_card_titles[title]
             curr_info = curr_card_titles[title]
 
-            prev_col_id = prev_info["column_id"]
-            curr_col_id = curr_info["column_id"]
+            prev_col_name = prev_info["column_name"]
+            curr_col_name = curr_info["column_name"]
 
-            # Only report as "moved" if the column ID changed (not just the name)
-            # If the column was renamed, the card stayed in the same column (same ID)
-            if prev_col_id != curr_col_id:
-                # Get the column names from the current state for display
-                prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
-                curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
+            # Map the previous column name to what it is now (accounting for renames)
+            expected_col_name = prev_col_name_to_curr_name.get(prev_col_name, prev_col_name)
 
+            # Only report as "moved" if the current column is different from expected
+            # This accounts for:
+            # - Column renames: card stays in renamed column (not a move)
+            # - Column ID changes: card stays in same-named column (not a move)
+            # - Actual moves: card is now in a different column name
+            if curr_col_name != expected_col_name:
                 changes["cards_moved"].append(
                     {
                         "id": curr_info["id"],
@@ -334,5 +355,40 @@ class BoardMonitor:
                         "to_column": curr_col_name,
                     }
                 )
+
+        # Detect renames: if a card ID was removed and the same ID was added with different title
+        # This means the card was renamed (same position/ID, different title)
+        renamed_card_ids = set(removed_cards_by_id.keys()) & set(added_cards_by_id.keys())
+
+        # Track renamed cards to remove them from added/removed lists
+        renamed_old_titles = set()
+        renamed_new_titles = set()
+
+        for card_id in renamed_card_ids:
+            old_title, old_info = removed_cards_by_id[card_id]
+            new_title, new_info = added_cards_by_id[card_id]
+
+            # Same ID and same column = rename (not a remove+add of different cards)
+            if old_info["column_id"] == new_info["column_id"]:
+                changes["cards_renamed"].append(
+                    {
+                        "id": card_id,
+                        "old_title": old_title,
+                        "new_title": new_title,
+                        "column": new_info["column_name"],
+                    }
+                )
+                renamed_old_titles.add(old_title)
+                renamed_new_titles.add(new_title)
+
+        # Remove renamed cards from added and removed lists
+        if renamed_new_titles:
+            changes["cards_added"] = [
+                c for c in changes["cards_added"] if c["title"] not in renamed_new_titles
+            ]
+        if renamed_old_titles:
+            changes["cards_removed"] = [
+                c for c in changes["cards_removed"] if c["title"] not in renamed_old_titles
+            ]
 
         return changes
