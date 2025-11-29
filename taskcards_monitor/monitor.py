@@ -159,37 +159,22 @@ class BoardMonitor:
             }
         return card_titles
 
-    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
+    def _detect_column_changes(self, current: BoardState, previous: BoardState) -> dict[str, list]:
         """
-        Detect changes between current and previous board states.
-
-        Uses NAME-BASED matching instead of ID-based matching because TaskCards
-        reassigns column IDs when columns are inserted in the middle.
+        Detect column changes (added, removed, renamed, moved).
 
         Args:
             current: Current board state
-            previous: Previous board state (None if first run)
+            previous: Previous board state
 
         Returns:
-            Dictionary containing detected changes
+            Dictionary with column change lists
         """
-        if previous is None:
-            return {
-                "is_first_run": True,
-                "columns_count": len(current.columns),
-                "cards_count": len(current.cards),
-            }
-
         changes = {
-            "is_first_run": False,
             "columns_added": [],
             "columns_removed": [],
             "columns_renamed": [],
             "columns_moved": [],
-            "cards_added": [],
-            "cards_removed": [],
-            "cards_renamed": [],
-            "cards_moved": [],
         }
 
         # Build name-based mappings (since TaskCards reassigns IDs)
@@ -283,7 +268,37 @@ class BoardMonitor:
                 c for c in changes["columns_removed"] if c["name"] not in renamed_old_names
             ]
 
-        # Detect card changes (use TITLE-based matching since IDs also change)
+        return changes
+
+    def _detect_card_changes(
+        self,
+        current: BoardState,
+        previous: BoardState,
+        column_renames: list[dict],
+        prev_name_set: set,
+        curr_name_set: set,
+    ) -> dict[str, list]:
+        """
+        Detect card changes (added, removed, renamed, moved).
+
+        Args:
+            current: Current board state
+            previous: Previous board state
+            column_renames: List of renamed columns
+            prev_name_set: Set of previous column names
+            curr_name_set: Set of current column names
+
+        Returns:
+            Dictionary with card change lists
+        """
+        changes = {
+            "cards_added": [],
+            "cards_removed": [],
+            "cards_renamed": [],
+            "cards_moved": [],
+        }
+
+        # Build title-based mappings
         prev_card_titles = self._build_card_title_mapping(previous)
         curr_card_titles = self._build_card_title_mapping(current)
 
@@ -325,7 +340,7 @@ class BoardMonitor:
             prev_col_name_to_curr_name[col_name] = col_name
 
         # For renamed columns, map old name to new name
-        for rename_info in changes["columns_renamed"]:
+        for rename_info in column_renames:
             old_name = rename_info["old_name"]
             new_name = rename_info["new_name"]
             prev_col_name_to_curr_name[old_name] = new_name
@@ -392,3 +407,45 @@ class BoardMonitor:
             ]
 
         return changes
+
+    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
+        """
+        Detect changes between current and previous board states.
+
+        Uses NAME-BASED matching instead of ID-based matching because TaskCards
+        reassigns column IDs when columns are inserted in the middle.
+
+        Args:
+            current: Current board state
+            previous: Previous board state (None if first run)
+
+        Returns:
+            Dictionary containing detected changes
+        """
+        if previous is None:
+            return {
+                "is_first_run": True,
+                "columns_count": len(current.columns),
+                "cards_count": len(current.cards),
+            }
+
+        # Detect column changes
+        column_changes = self._detect_column_changes(current, previous)
+
+        # Build column name sets for card change detection
+        prev_names = {data["name"]: (col_id, data) for col_id, data in previous.columns.items()}
+        curr_names = {data["name"]: (col_id, data) for col_id, data in current.columns.items()}
+        prev_name_set = set(prev_names.keys())
+        curr_name_set = set(curr_names.keys())
+
+        # Detect card changes
+        card_changes = self._detect_card_changes(
+            current, previous, column_changes["columns_renamed"], prev_name_set, curr_name_set
+        )
+
+        # Combine all changes
+        return {
+            "is_first_run": False,
+            **column_changes,
+            **card_changes,
+        }
