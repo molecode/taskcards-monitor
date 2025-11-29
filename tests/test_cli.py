@@ -192,14 +192,9 @@ class TestCLI:
         # Mock detect_changes to return changes with a new card added
         mock_monitor.detect_changes.return_value = {
             "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
-            "columns_moved": [],
-            "cards_added": [{"id": "card2", "title": "Task 2", "column": "To Do"}],
+            "cards_added": [{"id": "card2", "title": "Task 2", "description": ""}],
             "cards_removed": [],
-            "cards_renamed": [],
-            "cards_moved": [],
+            "cards_changed": [],
         }
 
         mock_fetcher = MagicMock()
@@ -268,8 +263,8 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Board State" in result.output
-        assert "To Do" in result.output
-        assert "Task 1" in result.output
+        assert "Task 1" in result.output  # Card title should be shown
+        assert "Total Cards" in result.output
 
     @patch("taskcards_monitor.cli.BoardMonitor")
     def test_show_command_no_state(self, mock_monitor_class, runner):
@@ -480,14 +475,9 @@ class TestDisplayFunctions:
 
         changes = {
             "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
-            "columns_moved": [],
             "cards_added": [],
             "cards_removed": [],
-            "cards_renamed": [],
-            "cards_moved": [],
+            "cards_changed": [],
         }
 
         display_changes(changes)
@@ -515,5 +505,5 @@ class TestDisplayFunctions:
 
         captured = capsys.readouterr()
         assert "Board State" in captured.out
-        assert "To Do" in captured.out
-        assert "Task 1" in captured.out
+        assert "Task 1" in captured.out  # Card title should be shown
+        assert "Total Cards" in captured.out

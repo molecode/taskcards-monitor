@@ -47,9 +47,7 @@ def display_changes(changes: dict) -> None:
     if changes.get("is_first_run"):
         console.print(
             Panel(
-                f"[green]Initial state saved[/green]\n"
-                f"Columns: {changes['columns_count']}\n"
-                f"Cards: {changes['cards_count']}",
+                f"[green]Initial state saved[/green]\nCards: {changes['cards_count']}",
                 title="First Run",
                 border_style="green",
             )
@@ -59,14 +57,9 @@ def display_changes(changes: dict) -> None:
     # Check if there are any changes
     has_changes = any(
         [
-            changes["columns_added"],
-            changes["columns_removed"],
-            changes["columns_renamed"],
-            changes["columns_moved"],
             changes["cards_added"],
             changes["cards_removed"],
-            changes["cards_renamed"],
-            changes["cards_moved"],
+            changes["cards_changed"],
         ]
     )
 
@@ -77,127 +70,58 @@ def display_changes(changes: dict) -> None:
     # Display changes
     console.print("\n[bold green]Changes detected:[/bold green]\n")
 
-    # Columns added
-    if changes["columns_added"]:
-        table = create_table(
-            "Columns Added",
-            "bold green",
-            [
-                {"name": "Name", "style": "green"},
-                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
-            ],
-            [(col["name"], str(col["position"])) for col in changes["columns_added"]],
-        )
-        console.print(table)
-        console.print()
-
-    # Columns removed
-    if changes["columns_removed"]:
-        table = create_table(
-            "Columns Removed",
-            "bold red",
-            [
-                {"name": "Name", "style": "red"},
-                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
-            ],
-            [(col["name"], str(col["position"])) for col in changes["columns_removed"]],
-        )
-        console.print(table)
-        console.print()
-
-    # Columns renamed
-    if changes["columns_renamed"]:
-        table = create_table(
-            "Columns Renamed",
-            "bold yellow",
-            [
-                {"name": "Old Name", "style": "dim"},
-                {"name": "New Name", "style": "yellow"},
-                {"name": "Position", "style": "dim", "justify": "right", "width": 8},
-            ],
-            [
-                (col["old_name"], col["new_name"], str(col["position"]))
-                for col in changes["columns_renamed"]
-            ],
-        )
-        console.print(table)
-        console.print()
-
-    # Columns moved (position changed)
-    if changes["columns_moved"]:
-        table = create_table(
-            "Columns Moved",
-            "bold blue",
-            [
-                {"name": "Name", "style": "blue"},
-                {"name": "From", "style": "dim", "justify": "right", "width": 6},
-                {"name": "To", "style": "blue", "justify": "right", "width": 6},
-            ],
-            [
-                (col["name"], str(col["old_position"]), str(col["new_position"]))
-                for col in changes["columns_moved"]
-            ],
-        )
-        console.print(table)
-        console.print()
-
     # Cards added
     if changes["cards_added"]:
-        table = create_table(
-            "Cards Added",
-            "bold green",
-            [{"name": "Title", "style": "green"}, {"name": "Column", "style": "dim"}],
-            [(card["title"], card["column"]) for card in changes["cards_added"]],
-        )
-        console.print(table)
-        console.print()
+        # Show title and description for added cards
+        for card in changes["cards_added"]:
+            console.print(
+                Panel(
+                    f"[bold green]{card['title']}[/bold green]\n\n{card['description'] or '[dim]No description[/dim]'}",
+                    title="Card Added",
+                    border_style="green",
+                )
+            )
+            console.print()
 
     # Cards removed
     if changes["cards_removed"]:
-        table = create_table(
-            "Cards Removed",
-            "bold red",
-            [{"name": "Title", "style": "red"}, {"name": "Column", "style": "dim"}],
-            [(card["title"], card["column"]) for card in changes["cards_removed"]],
-        )
-        console.print(table)
-        console.print()
+        # Show title and description for removed cards
+        for card in changes["cards_removed"]:
+            console.print(
+                Panel(
+                    f"[bold red]{card['title']}[/bold red]\n\n{card['description'] or '[dim]No description[/dim]'}",
+                    title="Card Removed",
+                    border_style="red",
+                )
+            )
+            console.print()
 
-    # Cards renamed
-    if changes["cards_renamed"]:
-        table = create_table(
-            "Cards Renamed",
-            "bold yellow",
-            [
-                {"name": "Old Title", "style": "dim"},
-                {"name": "New Title", "style": "yellow"},
-                {"name": "Column", "style": "dim"},
-            ],
-            [
-                (card["old_title"], card["new_title"], card["column"])
-                for card in changes["cards_renamed"]
-            ],
-        )
-        console.print(table)
-        console.print()
+    # Cards changed
+    if changes["cards_changed"]:
+        # Show title/description changes
+        for card in changes["cards_changed"]:
+            title_changed = card["old_title"] != card["new_title"]
+            desc_changed = card["old_description"] != card["new_description"]
 
-    # Cards moved
-    if changes["cards_moved"]:
-        table = create_table(
-            "Cards Moved",
-            "bold cyan",
-            [
-                {"name": "Title", "style": "cyan"},
-                {"name": "From", "style": "dim"},
-                {"name": "To", "style": "cyan"},
-            ],
-            [
-                (card["title"], card["from_column"], card["to_column"])
-                for card in changes["cards_moved"]
-            ],
-        )
-        console.print(table)
-        console.print()
+            content = ""
+            if title_changed:
+                content += "[bold]Title:[/bold]\n"
+                content += f"[dim]- {card['old_title']}[/dim]\n"
+                content += f"[green]+ {card['new_title']}[/green]\n\n"
+
+            if desc_changed:
+                content += "[bold]Description:[/bold]\n"
+                content += f"[dim]- {card['old_description'] or '(empty)'}[/dim]\n"
+                content += f"[green]+ {card['new_description'] or '(empty)'}[/green]"
+
+            console.print(
+                Panel(
+                    content.strip(),
+                    title="Card Changed",
+                    border_style="yellow",
+                )
+            )
+            console.print()
 
 
 def display_state(state: BoardState) -> None:
@@ -205,40 +129,20 @@ def display_state(state: BoardState) -> None:
 
     console.print(f"\n[bold]Board State[/bold] (saved at {state.timestamp})\n")
 
-    # Display columns
-    if state.columns:
-        table = create_table(
-            "Columns",
-            "bold blue",
-            [{"name": "Name", "style": "blue"}, {"name": "Position", "style": "dim"}],
-            [
-                (col_data["name"], str(col_data["position"]))
-                for _col_id, col_data in sorted(
-                    state.columns.items(), key=lambda x: x[1]["position"]
-                )
-            ],
-        )
-        console.print(table)
-        console.print()
-
     # Display cards
     if state.cards:
-        table = create_table(
-            "Cards",
-            "bold magenta",
-            [{"name": "Title", "style": "magenta"}, {"name": "Column", "style": "dim"}],
-            [
-                (
-                    card_data["title"],
-                    state.columns.get(card_data["column_id"], {}).get("name", "Unknown"),
+        console.print(f"[bold]Total Cards:[/bold] {len(state.cards)}\n")
+        for card_id, card_data in state.cards.items():
+            console.print(
+                Panel(
+                    f"[bold]{card_data['title']}[/bold]\n\n{card_data['description'] or '[dim]No description[/dim]'}",
+                    title=f"Card: {card_id}",
+                    border_style="magenta",
                 )
-                for _card_id, card_data in state.cards.items()
-            ],
-        )
-        console.print(table)
-        console.print()
-
-    console.print(f"[dim]Total: {len(state.columns)} columns, {len(state.cards)} cards[/dim]\n")
+            )
+            console.print()
+    else:
+        console.print("[dim]No cards found[/dim]\n")
 
 
 @click.group()
@@ -440,84 +344,22 @@ def inspect(board_id: str, token: str | None, screenshot: str | None):
 
         # Display detailed statistics
         console.print("[bold]Board Statistics:[/bold]")
-        console.print(f"  Total Columns: {len(state.columns)}")
-        console.print(f"  Total Cards: {len(state.cards)}")
-
-        # Count cards per column
-        cards_per_column = {}
-        for _card_id, card_data in state.cards.items():
-            col_id = card_data["column_id"]
-            cards_per_column[col_id] = cards_per_column.get(col_id, 0) + 1
-
-        console.print(
-            f"  Columns with cards: {len([c for c in cards_per_column.values() if c > 0])}"
-        )
-        console.print(
-            f"  Empty columns: {len(state.columns) - len([c for c in cards_per_column.values() if c > 0])}\n"
-        )
-
-        # Display columns with card counts
-        if state.columns:
-            table = create_table(
-                "Columns Overview",
-                "bold cyan",
-                [
-                    {"name": "Position", "style": "dim", "width": 8},
-                    {"name": "Column Name", "style": "cyan"},
-                    {"name": "Cards", "style": "green", "justify": "right", "width": 6},
-                ],
-                [
-                    (
-                        str(col_data["position"]),
-                        col_data["name"],
-                        str(cards_per_column.get(col_id, 0)),
-                    )
-                    for col_id, col_data in sorted(
-                        state.columns.items(), key=lambda x: x[1]["position"]
-                    )
-                ],
-            )
-            console.print(table)
-            console.print()
+        console.print(f"  Total Cards: {len(state.cards)}\n")
 
         # Display detailed card list
         if state.cards:
-            # Group cards by column and sort
-            cards_by_column = {}
+            console.print(f"[bold]Cards ({len(state.cards)} total):[/bold]\n")
             for card_id, card_data in state.cards.items():
-                col_id = card_data["column_id"]
-                if col_id not in cards_by_column:
-                    cards_by_column[col_id] = []
-                cards_by_column[col_id].append((card_id, card_data))
-
-            # Build rows sorted by column position then card position
-            rows = []
-            for col_id in sorted(state.columns.keys(), key=lambda x: state.columns[x]["position"]):
-                if col_id in cards_by_column:
-                    column_name = state.columns[col_id]["name"]
-                    for _card_id, card_data in sorted(
-                        cards_by_column[col_id], key=lambda x: x[1]["position"] or 0
-                    ):
-                        rows.append(
-                            (
-                                card_data["title"][:60],
-                                column_name,
-                                str(card_data["position"] or "-"),
-                            )
-                        )
-
-            table = create_table(
-                "Cards Detail",
-                "bold magenta",
-                [
-                    {"name": "Card Title", "style": "magenta", "overflow": "fold"},
-                    {"name": "Column", "style": "dim"},
-                    {"name": "Position", "style": "dim", "justify": "right", "width": 8},
-                ],
-                rows,
-            )
-            console.print(table)
-            console.print()
+                console.print(
+                    Panel(
+                        f"[bold]{card_data['title']}[/bold]\n\n{card_data['description'] or '[dim]No description[/dim]'}",
+                        title=f"Card: {card_id}",
+                        border_style="magenta",
+                    )
+                )
+                console.print()
+        else:
+            console.print("[dim]No cards found[/dim]\n")
 
         console.print(
             "[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n"
