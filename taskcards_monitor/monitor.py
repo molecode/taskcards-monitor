@@ -1,9 +1,151 @@
 """Board monitoring and change detection logic."""
 
 import json
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+
+@dataclass
+class ColumnChange:
+    """Represents a column that was added or removed."""
+
+    id: str
+    name: str
+    position: int
+
+
+@dataclass
+class ColumnRename:
+    """Represents a column that was renamed."""
+
+    id: str
+    old_name: str
+    new_name: str
+    position: int
+
+
+@dataclass
+class ColumnMove:
+    """Represents a column that changed position."""
+
+    id: str
+    name: str
+    old_position: int
+    new_position: int
+
+
+@dataclass
+class CardChange:
+    """Represents a card that was added or removed."""
+
+    id: str
+    title: str
+    column: str
+
+
+@dataclass
+class CardRename:
+    """Represents a card that was renamed."""
+
+    id: str
+    old_title: str
+    new_title: str
+    column: str
+
+
+@dataclass
+class CardMove:
+    """Represents a card that moved between columns."""
+
+    id: str
+    title: str
+    from_column: str
+    to_column: str
+
+
+@dataclass
+class BoardChanges:
+    """Container for all detected board changes."""
+
+    is_first_run: bool = False
+    columns_count: int = 0
+    cards_count: int = 0
+    columns_added: list[ColumnChange] = field(default_factory=list)
+    columns_removed: list[ColumnChange] = field(default_factory=list)
+    columns_renamed: list[ColumnRename] = field(default_factory=list)
+    columns_moved: list[ColumnMove] = field(default_factory=list)
+    cards_added: list[CardChange] = field(default_factory=list)
+    cards_removed: list[CardChange] = field(default_factory=list)
+    cards_renamed: list[CardRename] = field(default_factory=list)
+    cards_moved: list[CardMove] = field(default_factory=list)
+
+    def __getitem__(self, key: str) -> Any:
+        """Allow dictionary-style access for backward compatibility."""
+        dict_repr = self.to_dict()
+        return dict_repr[key]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary for backward compatibility with display code."""
+        if self.is_first_run:
+            return {
+                "is_first_run": True,
+                "columns_count": self.columns_count,
+                "cards_count": self.cards_count,
+            }
+
+        return {
+            "is_first_run": False,
+            "columns_added": [
+                {"id": c.id, "name": c.name, "position": c.position} for c in self.columns_added
+            ],
+            "columns_removed": [
+                {"id": c.id, "name": c.name, "position": c.position} for c in self.columns_removed
+            ],
+            "columns_renamed": [
+                {
+                    "id": c.id,
+                    "old_name": c.old_name,
+                    "new_name": c.new_name,
+                    "position": c.position,
+                }
+                for c in self.columns_renamed
+            ],
+            "columns_moved": [
+                {
+                    "id": c.id,
+                    "name": c.name,
+                    "old_position": c.old_position,
+                    "new_position": c.new_position,
+                }
+                for c in self.columns_moved
+            ],
+            "cards_added": [
+                {"id": c.id, "title": c.title, "column": c.column} for c in self.cards_added
+            ],
+            "cards_removed": [
+                {"id": c.id, "title": c.title, "column": c.column} for c in self.cards_removed
+            ],
+            "cards_renamed": [
+                {
+                    "id": c.id,
+                    "old_title": c.old_title,
+                    "new_title": c.new_title,
+                    "column": c.column,
+                }
+                for c in self.cards_renamed
+            ],
+            "cards_moved": [
+                {
+                    "id": c.id,
+                    "title": c.title,
+                    "from_column": c.from_column,
+                    "to_column": c.to_column,
+                }
+                for c in self.cards_moved
+            ],
+        }
 
 
 class BoardState:
@@ -426,7 +568,7 @@ class BoardMonitor:
 
         return changes
 
-    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
+    def detect_changes(self, current: BoardState, previous: BoardState | None) -> BoardChanges:
         """
         Detect changes between current and previous board states.
 
@@ -438,14 +580,14 @@ class BoardMonitor:
             previous: Previous board state (None if first run)
 
         Returns:
-            Dictionary containing detected changes
+            BoardChanges object containing all detected changes
         """
         if previous is None:
-            return {
-                "is_first_run": True,
-                "columns_count": len(current.columns),
-                "cards_count": len(current.cards),
-            }
+            return BoardChanges(
+                is_first_run=True,
+                columns_count=len(current.columns),
+                cards_count=len(current.cards),
+            )
 
         # Build column name mappings (used by both column and card detection)
         prev_names, prev_name_set = self._build_column_name_mappings(previous)
@@ -461,9 +603,59 @@ class BoardMonitor:
             current, previous, column_changes["columns_renamed"], prev_name_set, curr_name_set
         )
 
-        # Combine all changes
-        return {
-            "is_first_run": False,
-            **column_changes,
-            **card_changes,
-        }
+        # Build and return BoardChanges dataclass
+        return BoardChanges(
+            is_first_run=False,
+            columns_added=[
+                ColumnChange(id=c["id"], name=c["name"], position=c["position"])
+                for c in column_changes["columns_added"]
+            ],
+            columns_removed=[
+                ColumnChange(id=c["id"], name=c["name"], position=c["position"])
+                for c in column_changes["columns_removed"]
+            ],
+            columns_renamed=[
+                ColumnRename(
+                    id=c["id"],
+                    old_name=c["old_name"],
+                    new_name=c["new_name"],
+                    position=c["position"],
+                )
+                for c in column_changes["columns_renamed"]
+            ],
+            columns_moved=[
+                ColumnMove(
+                    id=c["id"],
+                    name=c["name"],
+                    old_position=c["old_position"],
+                    new_position=c["new_position"],
+                )
+                for c in column_changes["columns_moved"]
+            ],
+            cards_added=[
+                CardChange(id=c["id"], title=c["title"], column=c["column"])
+                for c in card_changes["cards_added"]
+            ],
+            cards_removed=[
+                CardChange(id=c["id"], title=c["title"], column=c["column"])
+                for c in card_changes["cards_removed"]
+            ],
+            cards_renamed=[
+                CardRename(
+                    id=c["id"],
+                    old_title=c["old_title"],
+                    new_title=c["new_title"],
+                    column=c["column"],
+                )
+                for c in card_changes["cards_renamed"]
+            ],
+            cards_moved=[
+                CardMove(
+                    id=c["id"],
+                    title=c["title"],
+                    from_column=c["from_column"],
+                    to_column=c["to_column"],
+                )
+                for c in card_changes["cards_moved"]
+            ],
+        )

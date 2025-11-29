@@ -294,8 +294,8 @@ def check(board_id: str, token: str | None, headless: bool, verbose: bool):
     # Detect changes
     changes = monitor.detect_changes(current_state, previous_state)
 
-    # Display changes
-    display_changes(changes)
+    # Display changes (convert dataclass to dict for display)
+    display_changes(changes.to_dict())
 
     # Save current state
     monitor.save_state(current_state)

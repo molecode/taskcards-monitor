@@ -8,7 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from taskcards_monitor.cli import main
-from taskcards_monitor.monitor import BoardState
+from taskcards_monitor.monitor import BoardChanges, BoardState, CardChange
 
 
 class TestCLI:
@@ -190,17 +190,10 @@ class TestCLI:
         }
 
         # Mock detect_changes to return changes with a new card added
-        mock_monitor.detect_changes.return_value = {
-            "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
-            "columns_moved": [],
-            "cards_added": [{"id": "card2", "title": "Task 2", "column": "To Do"}],
-            "cards_removed": [],
-            "cards_renamed": [],
-            "cards_moved": [],
-        }
+        mock_monitor.detect_changes.return_value = BoardChanges(
+            is_first_run=False,
+            cards_added=[CardChange(id="card2", title="Task 2", column="To Do")],
+        )
 
         mock_fetcher = MagicMock()
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
