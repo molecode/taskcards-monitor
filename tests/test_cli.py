@@ -192,12 +192,9 @@ class TestCLI:
         # Mock detect_changes to return changes with a new card added
         mock_monitor.detect_changes.return_value = {
             "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
-            "cards_added": [{"id": "card2", "title": "Task 2", "column": "To Do"}],
+            "cards_added": [{"id": "card2", "title": "Task 2"}],
             "cards_removed": [],
-            "cards_moved": [],
+            "cards_changed": [],
         }
 
         mock_fetcher = MagicMock()
@@ -245,15 +242,10 @@ class TestCLI:
 
         # Create board state
         data = {
-            "lists": [
-                {"id": "col1", "name": "To Do", "position": 0},
-                {"id": "col2", "name": "Done", "position": 1},
-            ],
             "cards": [
                 {
                     "id": "card1",
                     "title": "Task 1",
-                    "kanbanPosition": {"listId": "col1", "position": 0},
                 }
             ],
         }
@@ -266,7 +258,6 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Board State" in result.output
-        assert "To Do" in result.output
         assert "Task 1" in result.output
 
     @patch("taskcards_monitor.cli.BoardMonitor")
@@ -478,12 +469,9 @@ class TestDisplayFunctions:
 
         changes = {
             "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
             "cards_added": [],
             "cards_removed": [],
-            "cards_moved": [],
+            "cards_changed": [],
         }
 
         display_changes(changes)
@@ -496,12 +484,10 @@ class TestDisplayFunctions:
         from taskcards_monitor.cli import display_state
 
         data = {
-            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
             "cards": [
                 {
                     "id": "card1",
                     "title": "Task 1",
-                    "kanbanPosition": {"listId": "col1", "position": 0},
                 }
             ],
         }
@@ -511,5 +497,4 @@ class TestDisplayFunctions:
 
         captured = capsys.readouterr()
         assert "Board State" in captured.out
-        assert "To Do" in captured.out
         assert "Task 1" in captured.out

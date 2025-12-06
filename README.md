@@ -1,13 +1,12 @@
 # taskcards-monitor
 
-Monitor [TaskCards](https://www.taskcards.de) boards for changes (added/removed cards and columns) using browser automation.
+Monitor [TaskCards](https://www.taskcards.de) boards for card changes using browser automation.
 
 ## Features
 
 - Monitor both **public and private** TaskCards boards
 - Detect added/removed cards
-- Detect added/removed/renamed columns
-- Track card movements between columns
+- Detect card title changes
 - Uses Playwright browser automation
 - Persistent state tracking
 
@@ -101,21 +100,21 @@ TaskCards is a client-side rendered application that requires JavaScript to load
 When changes are detected:
 
 ```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            Cards Added                      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-┃ Title                    │ Column           ┃
-├──────────────────────────┼──────────────────┤
-│ New homework assignment  │ Organisatorisches│
-└──────────────────────────┴──────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃            Cards Added                ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+┃ Title                                 ┃
+├───────────────────────────────────────┤
+│ New homework assignment               │
+└───────────────────────────────────────┘
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            Cards Moved                    ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-┃ Title           │ From      │ To          ┃
-├─────────────────┼───────────┼─────────────┤
-│ Old assignment  │ Termine   │ Aktuelles   │
-└─────────────────┴───────────┴─────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃            Cards Changed                      ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+┃ Old Title       │ New Title                   ┃
+├─────────────────┼─────────────────────────────┤
+│ Old assignment  │ Updated assignment details  │
+└─────────────────┴─────────────────────────────┘
 ```
 
 ## Troubleshooting
@@ -188,7 +187,7 @@ taskcards_monitor/
 Planned features (not yet implemented):
 - Email notifications
 - Change history tracking
-- Diff view for card content changes
+- Track card descriptions and other metadata
 
 ## Contributing
 

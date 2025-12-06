@@ -18,33 +18,7 @@ class BoardState:
         """
         self.timestamp = datetime.now().isoformat()
         self.raw_data = data
-        self.columns = self._extract_columns(data)
         self.cards = self._extract_cards(data)
-
-    def _extract_columns(self, data: dict[str, Any]) -> dict[str, dict[str, Any]]:
-        """
-        Extract column information from board data.
-
-        Args:
-            data: Raw board data
-
-        Returns:
-            Dictionary mapping column ID to column info (name, position, etc.)
-        """
-        columns = {}
-
-        # TaskCards uses 'lists' for columns
-        if "lists" in data:
-            for col in data["lists"]:
-                col_id = col.get("id")
-                if col_id:
-                    columns[col_id] = {
-                        "name": col.get("name", ""),
-                        "position": col.get("position", 0),
-                        "color": col.get("color"),
-                    }
-
-        return columns
 
     def _extract_cards(self, data: dict[str, Any]) -> dict[str, dict[str, Any]]:
         """
@@ -62,16 +36,8 @@ class BoardState:
             for card in data["cards"]:
                 card_id = card.get("id")
                 if card_id:
-                    # Handle TaskCards kanbanPosition structure
-                    kanban_pos = card.get("kanbanPosition", {})
-                    column_id = kanban_pos.get("listId") if kanban_pos else None
-                    position = kanban_pos.get("position") if kanban_pos else None
-
                     cards[card_id] = {
                         "title": card.get("title", ""),
-                        "column_id": column_id,
-                        "position": position,
-                        "description": card.get("description", ""),
                     }
 
         return cards
@@ -80,7 +46,6 @@ class BoardState:
         """Convert board state to dictionary for serialization."""
         return {
             "timestamp": self.timestamp,
-            "columns": self.columns,
             "cards": self.cards,
         }
 
@@ -89,7 +54,6 @@ class BoardState:
         """Create BoardState from serialized dictionary."""
         state = cls.__new__(cls)
         state.timestamp = data["timestamp"]
-        state.columns = data["columns"]
         state.cards = data["cards"]
         state.raw_data = {}
         return state
@@ -157,54 +121,15 @@ class BoardMonitor:
         if previous is None:
             return {
                 "is_first_run": True,
-                "columns_count": len(current.columns),
                 "cards_count": len(current.cards),
             }
 
         changes = {
             "is_first_run": False,
-            "columns_added": [],
-            "columns_removed": [],
-            "columns_renamed": [],
             "cards_added": [],
             "cards_removed": [],
-            "cards_moved": [],
+            "cards_changed": [],
         }
-
-        # Detect column changes
-        prev_col_ids = set(previous.columns.keys())
-        curr_col_ids = set(current.columns.keys())
-
-        # Added columns
-        for col_id in curr_col_ids - prev_col_ids:
-            changes["columns_added"].append(
-                {
-                    "id": col_id,
-                    "name": current.columns[col_id]["name"],
-                }
-            )
-
-        # Removed columns
-        for col_id in prev_col_ids - curr_col_ids:
-            changes["columns_removed"].append(
-                {
-                    "id": col_id,
-                    "name": previous.columns[col_id]["name"],
-                }
-            )
-
-        # Renamed columns
-        for col_id in prev_col_ids & curr_col_ids:
-            prev_name = previous.columns[col_id]["name"]
-            curr_name = current.columns[col_id]["name"]
-            if prev_name != curr_name:
-                changes["columns_renamed"].append(
-                    {
-                        "id": col_id,
-                        "old_name": prev_name,
-                        "new_name": curr_name,
-                    }
-                )
 
         # Detect card changes
         prev_card_ids = set(previous.cards.keys())
@@ -213,45 +138,34 @@ class BoardMonitor:
         # Added cards
         for card_id in curr_card_ids - prev_card_ids:
             card = current.cards[card_id]
-            column_name = current.columns.get(card["column_id"], {}).get("name", "Unknown")
             changes["cards_added"].append(
                 {
                     "id": card_id,
                     "title": card["title"],
-                    "column": column_name,
                 }
             )
 
         # Removed cards
         for card_id in prev_card_ids - curr_card_ids:
             card = previous.cards[card_id]
-            column_name = previous.columns.get(card["column_id"], {}).get("name", "Unknown")
             changes["cards_removed"].append(
                 {
                     "id": card_id,
                     "title": card["title"],
-                    "column": column_name,
                 }
             )
 
-        # Moved cards (existing cards that changed columns)
+        # Changed cards (existing cards that changed title)
         for card_id in prev_card_ids & curr_card_ids:
             prev_card = previous.cards[card_id]
             curr_card = current.cards[card_id]
 
-            prev_col_id = prev_card["column_id"]
-            curr_col_id = curr_card["column_id"]
-
-            if prev_col_id != curr_col_id:
-                prev_col_name = previous.columns.get(prev_col_id, {}).get("name", "Unknown")
-                curr_col_name = current.columns.get(curr_col_id, {}).get("name", "Unknown")
-
-                changes["cards_moved"].append(
+            if prev_card["title"] != curr_card["title"]:
+                changes["cards_changed"].append(
                     {
                         "id": card_id,
-                        "title": curr_card["title"],
-                        "from_column": prev_col_name,
-                        "to_column": curr_col_name,
+                        "old_title": prev_card["title"],
+                        "new_title": curr_card["title"],
                     }
                 )
 
