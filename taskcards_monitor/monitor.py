@@ -1,46 +1,33 @@
 """Board monitoring and change detection logic."""
 
 import json
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 
+@dataclass
 class BoardState:
     """Represents the state of a TaskCards board at a point in time."""
 
-    def __init__(self, data: dict[str, Any]):
-        """
-        Initialize board state from raw board data.
+    data: dict[str, Any]
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
+    cards: dict[str, dict[str, str]] = field(default_factory=dict, init=False)
+    raw_data: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
 
-        Args:
-            data: Raw board data from TaskCards (from Vuex store)
-        """
-        self.timestamp = datetime.now().isoformat()
-        self.raw_data = data
-        self.cards = self._extract_cards(data)
+    def __post_init__(self):
+        """Extract card data from raw board data after initialization."""
+        self.raw_data = self.data
+        self.cards = {}
 
-    def _extract_cards(self, data: dict[str, Any]) -> dict[str, dict[str, Any]]:
-        """
-        Extract card information from board data.
-
-        Args:
-            data: Raw board data
-
-        Returns:
-            Dictionary mapping card ID to card info (title, column, position, etc.)
-        """
-        cards = {}
-
-        if "cards" in data:
-            for card in data["cards"]:
+        if "cards" in self.data:
+            for card in self.data["cards"]:
                 card_id = card.get("id")
                 if card_id:
-                    cards[card_id] = {
+                    self.cards[card_id] = {
                         "title": card.get("title", ""),
                     }
-
-        return cards
 
     def to_dict(self) -> dict[str, Any]:
         """Convert board state to dictionary for serialization."""
@@ -52,10 +39,11 @@ class BoardState:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "BoardState":
         """Create BoardState from serialized dictionary."""
-        state = cls.__new__(cls)
+        state = object.__new__(cls)
         state.timestamp = data["timestamp"]
         state.cards = data["cards"]
         state.raw_data = {}
+        state.data = {}
         return state
 
 
