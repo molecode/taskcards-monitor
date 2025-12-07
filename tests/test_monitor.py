@@ -31,8 +31,8 @@ class TestBoardState:
         state = BoardState(data)
 
         assert len(state.cards) == 2
-        assert state.cards["card1"]["title"] == "Task 1"
-        assert state.cards["card2"]["title"] == "Task 2"
+        assert state.cards["Task 1"]["title"] == "Task 1"
+        assert state.cards["Task 2"]["title"] == "Task 2"
 
     def test_extract_cards_empty(self):
         """Test extracting cards when no cards present."""
@@ -40,8 +40,8 @@ class TestBoardState:
         state = BoardState(data)
         assert state.cards == {}
 
-    def test_extract_cards_missing_id(self):
-        """Test extracting cards when some cards missing ID."""
+    def test_extract_cards_missing_title(self):
+        """Test extracting cards when some cards have empty titles."""
         data = {
             "cards": [
                 {
@@ -50,7 +50,8 @@ class TestBoardState:
                     "kanbanPosition": {"listId": "col1", "position": 0},
                 },
                 {
-                    "title": "Invalid Card",  # Missing ID
+                    "id": "card2",
+                    "title": "",  # Empty title
                     "kanbanPosition": {"listId": "col2", "position": 1},
                 },
             ]
@@ -58,9 +59,9 @@ class TestBoardState:
 
         state = BoardState(data)
 
-        # Should only extract cards with IDs
+        # Should only extract cards with non-empty titles
         assert len(state.cards) == 1
-        assert "card1" in state.cards
+        assert "Task 1" in state.cards
 
     def test_to_dict(self):
         """Test converting board state to dictionary."""
@@ -197,7 +198,6 @@ class TestBoardMonitor:
         assert changes["is_first_run"] is False
         assert len(changes["cards_added"]) == 0
         assert len(changes["cards_removed"]) == 0
-        assert len(changes["cards_changed"]) == 0
 
     def test_detect_cards_added(self):
         """Test detecting when cards are added."""
@@ -229,7 +229,6 @@ class TestBoardMonitor:
         changes = monitor.detect_changes(current, previous)
 
         assert len(changes["cards_added"]) == 1
-        assert changes["cards_added"][0]["id"] == "card2"
         assert changes["cards_added"][0]["title"] == "Task 2"
 
     def test_detect_cards_removed(self):
@@ -262,11 +261,10 @@ class TestBoardMonitor:
         changes = monitor.detect_changes(current, previous)
 
         assert len(changes["cards_removed"]) == 1
-        assert changes["cards_removed"][0]["id"] == "card2"
         assert changes["cards_removed"][0]["title"] == "Task 2"
 
-    def test_detect_cards_changed(self):
-        """Test detecting when cards have their title changed."""
+    def test_detect_title_changed(self):
+        """Test that title changes are detected as remove + add (not a change)."""
         prev_data = {
             "cards": [
                 {
@@ -290,10 +288,11 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_changed"]) == 1
-        assert changes["cards_changed"][0]["id"] == "card1"
-        assert changes["cards_changed"][0]["old_title"] == "Task 1"
-        assert changes["cards_changed"][0]["new_title"] == "Updated Task 1"
+        # When a title changes, we see it as removed + added (content-based tracking)
+        assert len(changes["cards_removed"]) == 1
+        assert changes["cards_removed"][0]["title"] == "Task 1"
+        assert len(changes["cards_added"]) == 1
+        assert changes["cards_added"][0]["title"] == "Updated Task 1"
 
     def test_detect_multiple_changes(self):
         """Test detecting multiple types of changes at once."""
@@ -314,7 +313,7 @@ class TestBoardMonitor:
             "cards": [
                 {
                     "id": "card1",
-                    "title": "Updated Task 1",  # Changed
+                    "title": "Updated Task 1",  # Title changed (removed + added)
                 },
                 {
                     "id": "card3",
@@ -330,6 +329,7 @@ class TestBoardMonitor:
         changes = monitor.detect_changes(current, previous)
 
         # Check all types of changes detected
-        assert len(changes["cards_added"]) == 1  # card3
-        assert len(changes["cards_removed"]) == 1  # card2
-        assert len(changes["cards_changed"]) == 1  # card1
+        # "Task 3" added, "Updated Task 1" added (title change)
+        assert len(changes["cards_added"]) == 2
+        # "Task 2" removed, "Task 1" removed (title change)
+        assert len(changes["cards_removed"]) == 2

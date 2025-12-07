@@ -23,10 +23,11 @@ class BoardState:
 
         if "cards" in self.data:
             for card in self.data["cards"]:
-                card_id = card.get("id")
-                if card_id:
-                    self.cards[card_id] = {
-                        "title": card.get("title", ""),
+                title = card.get("title", "")
+                if title:  # Only track cards with non-empty titles
+                    # Use title as key - tracks by content, not ID
+                    self.cards[title] = {
+                        "title": title,
                     }
 
     def to_dict(self) -> dict[str, Any]:
@@ -116,45 +117,29 @@ class BoardMonitor:
             "is_first_run": False,
             "cards_added": [],
             "cards_removed": [],
-            "cards_changed": [],
         }
 
-        # Detect card changes
-        prev_card_ids = set(previous.cards.keys())
-        curr_card_ids = set(current.cards.keys())
+        # Detect card changes by comparing titles (content)
+        prev_titles = set(previous.cards.keys())
+        curr_titles = set(current.cards.keys())
 
-        # Added cards
-        for card_id in curr_card_ids - prev_card_ids:
-            card = current.cards[card_id]
+        # Added cards (new titles that weren't in previous state)
+        for title in curr_titles - prev_titles:
             changes["cards_added"].append(
                 {
-                    "id": card_id,
-                    "title": card["title"],
+                    "title": title,
                 }
             )
 
-        # Removed cards
-        for card_id in prev_card_ids - curr_card_ids:
-            card = previous.cards[card_id]
+        # Removed cards (titles that disappeared)
+        for title in prev_titles - curr_titles:
             changes["cards_removed"].append(
                 {
-                    "id": card_id,
-                    "title": card["title"],
+                    "title": title,
                 }
             )
 
-        # Changed cards (existing cards that changed title)
-        for card_id in prev_card_ids & curr_card_ids:
-            prev_card = previous.cards[card_id]
-            curr_card = current.cards[card_id]
-
-            if prev_card["title"] != curr_card["title"]:
-                changes["cards_changed"].append(
-                    {
-                        "id": card_id,
-                        "old_title": prev_card["title"],
-                        "new_title": curr_card["title"],
-                    }
-                )
+        # Note: Cards that moved between columns will NOT show as changed
+        # because we're tracking by title/content, not by ID or position
 
         return changes
