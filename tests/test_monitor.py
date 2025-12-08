@@ -264,7 +264,7 @@ class TestBoardMonitor:
         assert changes["cards_removed"][0]["title"] == "Task 2"
 
     def test_detect_title_changed(self):
-        """Test that title changes are detected as remove + add (not a change)."""
+        """Test that title changes are detected as a change (not remove + add)."""
         prev_data = {
             "cards": [
                 {
@@ -288,11 +288,12 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        # When a title changes, we see it as removed + added (content-based tracking)
-        assert len(changes["cards_removed"]) == 1
-        assert changes["cards_removed"][0]["title"] == "Task 1"
-        assert len(changes["cards_added"]) == 1
-        assert changes["cards_added"][0]["title"] == "Updated Task 1"
+        # Smart detection: exactly one title removed and one added = title change
+        assert len(changes["cards_removed"]) == 0
+        assert len(changes["cards_added"]) == 0
+        assert len(changes["cards_changed"]) == 1
+        assert changes["cards_changed"][0]["old_title"] == "Task 1"
+        assert changes["cards_changed"][0]["new_title"] == "Updated Task 1"
 
     def test_detect_multiple_changes(self):
         """Test detecting multiple types of changes at once."""
@@ -328,8 +329,7 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        # Check all types of changes detected
-        # "Task 3" added, "Updated Task 1" added (title change)
-        assert len(changes["cards_added"]) == 2
-        # "Task 2" removed, "Task 1" removed (title change)
-        assert len(changes["cards_removed"]) == 2
+        # Multiple changes: not treated as single rename, but as separate operations
+        assert len(changes["cards_added"]) == 2  # "Updated Task 1" and "Task 3" added
+        assert len(changes["cards_removed"]) == 2  # "Task 1" and "Task 2" removed
+        assert len(changes["cards_changed"]) == 0  # No single rename detected

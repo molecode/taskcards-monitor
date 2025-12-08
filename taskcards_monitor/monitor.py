@@ -117,29 +117,40 @@ class BoardMonitor:
             "is_first_run": False,
             "cards_added": [],
             "cards_removed": [],
+            "cards_changed": [],
         }
 
-        # Detect card changes by comparing titles (content)
+        # Track by title (content-based) to handle ID changes on moves
         prev_titles = set(previous.cards.keys())
         curr_titles = set(current.cards.keys())
 
-        # Added cards (new titles that weren't in previous state)
-        for title in curr_titles - prev_titles:
-            changes["cards_added"].append(
+        # Find titles that disappeared and appeared
+        removed_titles = prev_titles - curr_titles
+        added_titles = curr_titles - prev_titles
+
+        # Smart rename detection: if exactly one title was removed and one added,
+        # and the card count stayed the same, it's likely a rename (title change)
+        # rather than a move
+        if (
+            len(removed_titles) == 1
+            and len(added_titles) == 1
+            and len(prev_titles) == len(curr_titles)
+        ):
+            # This is likely a title change, not a move
+            old_title = removed_titles.pop()
+            new_title = added_titles.pop()
+            changes["cards_changed"].append(
                 {
-                    "title": title,
+                    "old_title": old_title,
+                    "new_title": new_title,
                 }
             )
+        else:
+            # Multiple changes or card count changed - treat as separate adds/removes
+            for title in removed_titles:
+                changes["cards_removed"].append({"title": title})
 
-        # Removed cards (titles that disappeared)
-        for title in prev_titles - curr_titles:
-            changes["cards_removed"].append(
-                {
-                    "title": title,
-                }
-            )
-
-        # Note: Cards that moved between columns will NOT show as changed
-        # because we're tracking by title/content, not by ID or position
+            for title in added_titles:
+                changes["cards_added"].append({"title": title})
 
         return changes
