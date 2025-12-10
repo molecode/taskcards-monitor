@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from taskcards_monitor.cli import main
+from taskcards_monitor.display import create_table
 from taskcards_monitor.monitor import BoardState
 
 
@@ -428,8 +429,6 @@ class TestDisplayFunctions:
 
     def test_create_table(self):
         """Test create_table helper function."""
-        from taskcards_monitor.cli import create_table
-
         table = create_table(
             title="Test Table",
             header_style="bold blue",
