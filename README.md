@@ -1,13 +1,12 @@
 # taskcards-monitor
 
-Monitor [TaskCards](https://www.taskcards.de) boards for card changes using browser automation.
+ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the GraphQL API.
 
 ## Features
 
 - Monitor both **public and private** TaskCards boards
 - Detect added/removed cards
 - Detect card title changes
-- Uses Playwright browser automation
 - Persistent state tracking
 
 ## Installation
@@ -16,8 +15,6 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes using brow
 # Install dependencies
 uv sync
 
-# Install Playwright browsers
-uv run playwright install chromium
 ```
 
 ## Quick Start
