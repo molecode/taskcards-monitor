@@ -28,9 +28,8 @@ def main():
 @main.command()
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
-@click.option("--headless/--no-headless", default=True, help="Run browser in headless mode")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
-def check(board_id: str, token: str | None, headless: bool, verbose: bool):
+def check(board_id: str, token: str | None, verbose: bool):
     """Check a board for changes and log any differences."""
 
     if verbose:
@@ -54,7 +53,7 @@ def check(board_id: str, token: str | None, headless: bool, verbose: bool):
     try:
         with (
             console.status("[bold green]Fetching board data...", spinner="dots"),
-            TaskCardsFetcher(headless=headless) as fetcher,
+            TaskCardsFetcher() as fetcher,
         ):
             data = fetcher.fetch_board(board_id, token=token)
 
@@ -155,31 +154,29 @@ def list_boards():
 @main.command()
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
-@click.option("--screenshot", "-s", help="Save screenshot to this path")
-def inspect(board_id: str, token: str | None, screenshot: str | None):
+def inspect(board_id: str, token: str | None):
     """
-    Inspect a board for debugging (visible browser, detailed output).
+    Inspect a board for debugging (detailed output).
 
     This command is for exploring and debugging boards. It:
-    - Always opens a visible browser window
     - Shows detailed information about all columns and cards
     - Does NOT save state or affect monitoring
-    - Keeps browser open briefly for manual inspection
+    - Useful for verifying board access and structure
     """
 
     display_inspect_header(board_id)
 
     try:
-        console.print("\n[cyan]Opening browser (visible mode)...[/cyan]")
+        console.print("\n[cyan]Fetching board data...[/cyan]")
 
-        with TaskCardsFetcher(headless=False) as fetcher:
-            data = fetcher.fetch_board(board_id, token=token, screenshot_path=screenshot)
+        with TaskCardsFetcher() as fetcher:
+            data = fetcher.fetch_board(board_id, token=token)
 
         # Create state for display
         state = BoardState(data)
 
-        # Display results
-        display_inspect_results(state, screenshot)
+        # Display results (without screenshot path)
+        display_inspect_results(state, None)
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
