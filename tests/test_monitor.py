@@ -77,25 +77,28 @@ class TestBoardState:
         result = state.to_dict()
 
         assert "timestamp" in result
-        assert "cards" in result
-        assert result["cards"] == state.cards
+        assert "board" in result
+        assert result["board"]["cards"][0]["title"] == "Task 1"
 
     def test_from_dict(self):
         """Test creating board state from dictionary."""
         data = {
             "timestamp": "2025-01-01T12:00:00",
-            "cards": {
-                "card1": {
-                    "title": "Task 1",
-                }
+            "board": {
+                "cards": [
+                    {
+                        "id": "card1",
+                        "title": "Task 1",
+                    }
+                ],
+                "lists": [],
             },
         }
 
         state = BoardState.from_dict(data)
 
         assert state.timestamp == "2025-01-01T12:00:00"
-        assert state.cards == data["cards"]
-        assert state.raw_data == {}
+        assert state.cards["card1"]["title"] == "Task 1"
 
 
 class TestBoardMonitor:

@@ -41,7 +41,7 @@ def display_changes(changes: dict) -> None:
     if changes.get("is_first_run"):
         console.print(
             Panel(
-                f"[green]Initial state saved[/green]\nCards: {changes['cards_count']}",
+                f"[green]Initial state saved[/green]\nCards: {changes.get('cards_count', 0)}",
                 title="First Run",
                 border_style="green",
             )
@@ -51,9 +51,9 @@ def display_changes(changes: dict) -> None:
     # Check if there are any changes
     has_changes = any(
         [
-            changes["cards_added"],
-            changes["cards_removed"],
-            changes["cards_changed"],
+            changes.get("cards_added"),
+            changes.get("cards_removed"),
+            changes.get("cards_changed"),
         ]
     )
 
@@ -65,7 +65,7 @@ def display_changes(changes: dict) -> None:
     console.print("\n[bold green]Changes detected:[/bold green]\n")
 
     # Cards added
-    if changes["cards_added"]:
+    if changes.get("cards_added"):
         table = create_table(
             "Cards Added",
             "bold green",
@@ -74,7 +74,10 @@ def display_changes(changes: dict) -> None:
                 {"name": "Description", "style": "green dim", "width": 50, "overflow": "fold"},
             ],
             [
-                (card["title"], card["description"] or "[dim]<empty>[/dim]")
+                (
+                    card.get("title", ""),
+                    card.get("description") or "[dim]<empty>[/dim]",
+                )
                 for card in changes["cards_added"]
             ],
         )
@@ -82,7 +85,7 @@ def display_changes(changes: dict) -> None:
         console.print()
 
     # Cards removed
-    if changes["cards_removed"]:
+    if changes.get("cards_removed"):
         table = create_table(
             "Cards Removed",
             "bold red",
@@ -91,7 +94,10 @@ def display_changes(changes: dict) -> None:
                 {"name": "Description", "style": "red dim", "width": 50, "overflow": "fold"},
             ],
             [
-                (card["title"], card["description"] or "[dim]<empty>[/dim]")
+                (
+                    card.get("title", ""),
+                    card.get("description") or "[dim]<empty>[/dim]",
+                )
                 for card in changes["cards_removed"]
             ],
         )
@@ -99,12 +105,17 @@ def display_changes(changes: dict) -> None:
         console.print()
 
     # Cards changed
-    if changes["cards_changed"]:
+    if changes.get("cards_changed"):
         rows = []
         for card in changes["cards_changed"]:
             # Determine what changed
-            title_changed = card["old_title"] != card["new_title"]
-            desc_changed = card["old_description"] != card["new_description"]
+            old_title = card.get("old_title", "")
+            new_title = card.get("new_title", "")
+            old_description = card.get("old_description", "")
+            new_description = card.get("new_description", "")
+
+            title_changed = old_title != new_title
+            desc_changed = old_description != new_description
 
             if title_changed and desc_changed:
                 change_type = "Title & Description"
@@ -113,14 +124,14 @@ def display_changes(changes: dict) -> None:
             else:
                 change_type = "Description"
 
-            old_desc = card["old_description"] or "[dim]<empty>[/dim]"
-            new_desc = card["new_description"] or "[dim]<empty>[/dim]"
+            old_desc = old_description or "[dim]<empty>[/dim]"
+            new_desc = new_description or "[dim]<empty>[/dim]"
 
             rows.append(
                 (
                     change_type,
-                    card["old_title"] if title_changed else "[dim]unchanged[/dim]",
-                    card["new_title"] if title_changed else "[dim]unchanged[/dim]",
+                    old_title if title_changed else "[dim]unchanged[/dim]",
+                    new_title if title_changed else "[dim]unchanged[/dim]",
                     old_desc if desc_changed else "[dim]unchanged[/dim]",
                     new_desc if desc_changed else "[dim]unchanged[/dim]",
                 )
@@ -210,11 +221,8 @@ def display_inspect_header(board_id: str) -> None:
     )
 
 
-def display_inspect_results(state: BoardState, screenshot_path: str | None) -> None:
+def display_inspect_results(state: BoardState) -> None:
     """Display results from board inspection."""
-
-    if screenshot_path:
-        console.print(f"\n[green]✓ Screenshot saved to:[/green] {screenshot_path}")
 
     console.print("\n[green]✓ Board loaded successfully![/green]\n")
 

@@ -8,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from taskcards_monitor.cli import main
+from taskcards_monitor.display import create_table
 from taskcards_monitor.monitor import BoardState
 
 
@@ -384,14 +385,12 @@ class TestCLI:
         assert result.exit_code == 0
         assert "Inspect Mode" in result.output
         assert "Board loaded successfully" in result.output
-        mock_fetcher_class.assert_called_once_with(headless=False)
-        mock_fetcher.fetch_board.assert_called_once_with(
-            "board123", token=None, screenshot_path=None
-        )
+        mock_fetcher_class.assert_called_once_with()
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token=None)
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
-    def test_inspect_command_with_token_and_screenshot(self, mock_fetcher_class, runner, tmp_path):
-        """Test inspect command with token and screenshot."""
+    def test_inspect_command_with_token(self, mock_fetcher_class, runner):
+        """Test inspect command with token."""
         # Setup mock
         mock_fetcher = MagicMock()
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
@@ -402,18 +401,12 @@ class TestCLI:
         }
         mock_fetcher.fetch_board.return_value = board_data
 
-        screenshot_path = str(tmp_path / "test.png")
-
         # Run command
-        result = runner.invoke(
-            main, ["inspect", "board123", "--token", "secret123", "--screenshot", screenshot_path]
-        )
+        result = runner.invoke(main, ["inspect", "board123", "--token", "secret123"])
 
         # Verify
         assert result.exit_code == 0
-        mock_fetcher.fetch_board.assert_called_once_with(
-            "board123", token="secret123", screenshot_path=screenshot_path
-        )
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123")
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     def test_inspect_command_error(self, mock_fetcher_class, runner):
@@ -436,8 +429,6 @@ class TestDisplayFunctions:
 
     def test_create_table(self):
         """Test create_table helper function."""
-        from taskcards_monitor.cli import create_table
-
         table = create_table(
             title="Test Table",
             header_style="bold blue",
