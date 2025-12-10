@@ -210,11 +210,8 @@ def display_inspect_header(board_id: str) -> None:
     )
 
 
-def display_inspect_results(state: BoardState, screenshot_path: str | None) -> None:
+def display_inspect_results(state: BoardState) -> None:
     """Display results from board inspection."""
-
-    if screenshot_path:
-        console.print(f"\n[green]✓ Screenshot saved to:[/green] {screenshot_path}")
 
     console.print("\n[green]✓ Board loaded successfully![/green]\n")
 

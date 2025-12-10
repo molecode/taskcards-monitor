@@ -175,8 +175,8 @@ def inspect(board_id: str, token: str | None):
         # Create state for display
         state = BoardState(data)
 
-        # Display results (without screenshot path)
-        display_inspect_results(state, None)
+        # Display results
+        display_inspect_results(state)
 
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {str(e)}")

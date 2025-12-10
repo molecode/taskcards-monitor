@@ -39,14 +39,8 @@ class TaskCardsFetcher:
     }
     """
 
-    def __init__(self, headless: bool = True, timeout: int = 60):
-        """
-        Initialize the fetcher.
-
-        Args:
-            headless: Unused (kept for backwards compatibility)
-            timeout: Request timeout in seconds (default: 60)
-        """
+    def __init__(self, timeout: int = 60):
+        """Initialize the fetcher."""
         self.timeout = timeout
         self.client: httpx.Client | None = None
         self.x_token: str | None = None
@@ -134,7 +128,6 @@ class TaskCardsFetcher:
         self,
         board_id: str,
         token: str | None = None,
-        screenshot_path: str | None = None,
     ) -> dict[str, Any]:
         """
         Fetch board data using GraphQL API.
@@ -142,7 +135,6 @@ class TaskCardsFetcher:
         Args:
             board_id: The board ID
             token: Optional view token for private boards
-            screenshot_path: Unused (kept for backwards compatibility)
 
         Returns:
             Dictionary containing board data with lists and cards
@@ -152,11 +144,6 @@ class TaskCardsFetcher:
         """
         if not self.client:
             raise ValueError("Client not initialized. Use 'with' context manager.")
-
-        if screenshot_path:
-            # Screenshots are not supported with API-based fetching
-            # Could be implemented later with a separate browser automation step
-            pass
 
         # Step 1: Create visitor and get x-token
         self.x_token = self._create_visitor()
