@@ -292,27 +292,34 @@ class TestCLI:
         state_dir = tmp_path / ".cache" / "taskcards-monitor"
         state_dir.mkdir(parents=True)
 
-        # Create state files
+        # Create state files using new format
         board1_data = {
             "timestamp": "2025-01-01T12:00:00",
-            "columns": {"col1": {"name": "To Do", "position": 0, "color": None}},
-            "cards": {
-                "card1": {
-                    "title": "Task 1",
-                    "column_id": "col1",
-                    "position": 0,
-                    "description": "",
-                }
+            "board": {
+                "id": "board123",
+                "name": "My First Board",
+                "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+                "cards": [
+                    {
+                        "id": "card1",
+                        "title": "Task 1",
+                        "description": "",
+                    }
+                ],
             },
         }
 
         board2_data = {
             "timestamp": "2025-01-02T12:00:00",
-            "columns": {
-                "col1": {"name": "To Do", "position": 0, "color": None},
-                "col2": {"name": "Done", "position": 1, "color": None},
+            "board": {
+                "id": "board456",
+                "name": "My Second Board",
+                "lists": [
+                    {"id": "col1", "name": "To Do", "position": 0},
+                    {"id": "col2", "name": "Done", "position": 1},
+                ],
+                "cards": [],
             },
-            "cards": {},
         }
 
         with open(state_dir / "board123.json", "w") as f:
@@ -337,11 +344,13 @@ class TestCLI:
         state_dir = tmp_path / ".cache" / "taskcards-monitor"
         state_dir.mkdir(parents=True)
 
-        # Create valid state file
+        # Create valid state file using new format
         valid_data = {
             "timestamp": "2025-01-01T12:00:00",
-            "columns": {},
-            "cards": {},
+            "board": {
+                "lists": [],
+                "cards": [],
+            },
         }
         with open(state_dir / "board123.json", "w") as f:
             json.dump(valid_data, f)

@@ -189,12 +189,14 @@ def display_boards_list(boards_info: list[dict]) -> None:
         "bold blue",
         [
             {"name": "Board ID", "style": "cyan"},
+            {"name": "Board Name", "style": "bold"},
             {"name": "Last Checked", "style": "dim"},
             {"name": "Cards", "style": "magenta", "justify": "right"},
         ],
         [
             (
                 board["board_id"],
+                board.get("board_name", "[dim]<unnamed>[/dim]"),
                 board["timestamp"],
                 str(board["cards"]),
             )
