@@ -155,8 +155,6 @@ def inspect(board_id: str, token: str | None):
     - Useful for verifying board access and structure
     """
 
-    display_inspect_header(board_id)
-
     try:
         console.print("\n[cyan]Fetching board data...[/cyan]")
 
@@ -165,6 +163,9 @@ def inspect(board_id: str, token: str | None):
 
         # Create state for display
         state = BoardState(data)
+
+        # Display header with board name
+        display_inspect_header(board_id, state.board_name or None)
 
         # Display results
         display_inspect_results(state)

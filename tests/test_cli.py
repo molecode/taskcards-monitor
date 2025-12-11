@@ -376,6 +376,8 @@ class TestCLI:
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
 
         board_data = {
+            "id": "board123",
+            "name": "Test Board",
             "lists": [{"id": "col1", "name": "To Do", "position": 0}],
             "cards": [
                 {
@@ -393,7 +395,13 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Inspect Mode" in result.output
+        assert "Board Name" in result.output
+        assert "Test Board" in result.output
         assert "Board loaded successfully" in result.output
+        assert "Columns" in result.output
+        assert "To Do" in result.output
+        assert "Cards" in result.output
+        assert "Task 1" in result.output
         mock_fetcher_class.assert_called_once_with()
         mock_fetcher.fetch_board.assert_called_once_with("board123", token=None)
 
