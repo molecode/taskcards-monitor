@@ -153,29 +153,90 @@ def display_changes(changes: dict) -> None:
         console.print()
 
 
-def display_state(state: BoardState) -> None:
-    """Display the current board state."""
+def _display_board_details(state: BoardState) -> None:
+    """Display columns and cards for a board state (reusable helper)."""
 
-    console.print(f"\n[bold]Board State[/bold] (saved at {state.timestamp})\n")
+    # Display columns/lists
+    if state.lists:
+        # Count cards per column
+        full_cards = state.data.get("cards", [])
+        card_count_by_list = {}
+        for card in full_cards:
+            kanban_pos = card.get("kanbanPosition", {})
+            list_id = kanban_pos.get("listId") if kanban_pos else None
+            if list_id:
+                card_count_by_list[list_id] = card_count_by_list.get(list_id, 0) + 1
 
-    # Display cards
-    if state.cards:
+        table = create_table(
+            "Columns",
+            "bold cyan",
+            [
+                {"name": "Column Name", "style": "cyan", "width": 40},
+                {"name": "Position", "style": "cyan dim", "justify": "right", "width": 10},
+                {"name": "Cards", "style": "cyan", "justify": "right", "width": 10},
+            ],
+            [
+                (
+                    lst.get("name", "[dim]<unnamed>[/dim]"),
+                    str(lst.get("position", 0)),
+                    str(card_count_by_list.get(lst.get("id"), 0)),
+                )
+                for lst in sorted(state.lists, key=lambda x: x.get("position", 0))
+            ],
+        )
+        console.print(table)
+        console.print()
+
+    # Create a mapping of list_id to list name for quick lookup
+    list_name_map = {lst.get("id"): lst.get("name", "[dim]<unnamed>[/dim]") for lst in state.lists}
+
+    # Display cards with column information
+    full_cards = state.data.get("cards", [])
+    if full_cards:
+        rows = []
+        for card in full_cards:
+            title = card.get("title", "[dim]<untitled>[/dim]")
+            description = card.get("description", "") or "[dim]<empty>[/dim]"
+            kanban_pos = card.get("kanbanPosition", {})
+            list_id = kanban_pos.get("listId") if kanban_pos else None
+            column_name = (
+                list_name_map.get(list_id, "[dim]<unknown>[/dim]")
+                if list_id
+                else "[dim]<no column>[/dim]"
+            )
+            rows.append((title, column_name, description))
+
         table = create_table(
             "Cards",
             "bold magenta",
             [
-                {"name": "Title", "style": "magenta", "width": 30},
-                {"name": "Description", "style": "magenta dim", "width": 60, "overflow": "fold"},
+                {"name": "Card Title", "style": "magenta", "width": 40, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 30},
+                {
+                    "name": "Description",
+                    "style": "magenta dim",
+                    "width": 50,
+                    "overflow": "fold",
+                },
             ],
-            [
-                (card_data["title"], card_data["description"] or "[dim]<empty>[/dim]")
-                for _card_id, card_data in state.cards.items()
-            ],
+            rows,
         )
         console.print(table)
         console.print()
     else:
         console.print("[dim]No cards found[/dim]\n")
+
+
+def display_state(state: BoardState) -> None:
+    """Display the current board state."""
+
+    header = "[bold]Board State[/bold]"
+    if state.board_name:
+        header += f" - {state.board_name}"
+    header += f" (saved at {state.timestamp})"
+    console.print(f"\n{header}\n")
+
+    _display_board_details(state)
 
     console.print(f"[dim]Total: {len(state.cards)} cards[/dim]\n")
 
@@ -189,12 +250,14 @@ def display_boards_list(boards_info: list[dict]) -> None:
         "bold blue",
         [
             {"name": "Board ID", "style": "cyan"},
+            {"name": "Board Name", "style": "bold"},
             {"name": "Last Checked", "style": "dim"},
             {"name": "Cards", "style": "magenta", "justify": "right"},
         ],
         [
             (
                 board["board_id"],
+                board.get("board_name", "[dim]<unnamed>[/dim]"),
                 board["timestamp"],
                 str(board["cards"]),
             )
@@ -208,13 +271,17 @@ def display_boards_list(boards_info: list[dict]) -> None:
     )
 
 
-def display_inspect_header(board_id: str) -> None:
+def display_inspect_header(board_id: str, board_name: str | None = None) -> None:
     """Display header for inspect mode."""
+
+    header_content = f"[bold cyan]Board ID:[/bold cyan] {board_id}\n"
+    if board_name:
+        header_content += f"[bold]Board Name:[/bold] {board_name}\n"
+    header_content += "[dim]This is a debugging tool - state will NOT be saved[/dim]"
 
     console.print(
         Panel(
-            f"[bold cyan]Board ID:[/bold cyan] {board_id}\n"
-            f"[dim]This is a debugging tool - state will NOT be saved[/dim]",
+            header_content,
             title="Inspect Mode",
             border_style="cyan",
         )
@@ -228,31 +295,10 @@ def display_inspect_results(state: BoardState) -> None:
 
     # Display detailed statistics
     console.print("[bold]Board Statistics:[/bold]")
+    console.print(f"  Total Columns: {len(state.lists)}")
     console.print(f"  Total Cards: {len(state.cards)}\n")
 
-    # Display detailed card list
-    if state.cards:
-        table = create_table(
-            "Cards",
-            "bold magenta",
-            [
-                {"name": "Card Title", "style": "magenta", "width": 30, "overflow": "fold"},
-                {
-                    "name": "Description",
-                    "style": "magenta dim",
-                    "width": 60,
-                    "overflow": "fold",
-                },
-            ],
-            [
-                (card_data["title"], card_data["description"] or "[dim]<empty>[/dim]")
-                for _card_id, card_data in state.cards.items()
-            ],
-        )
-        console.print(table)
-        console.print()
-    else:
-        console.print("[dim]No cards found[/dim]\n")
+    _display_board_details(state)
 
     console.print(
         "[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n"

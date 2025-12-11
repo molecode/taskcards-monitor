@@ -243,10 +243,14 @@ class TestCLI:
 
         # Create board state
         data = {
+            "id": "board123",
+            "name": "Test Board",
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
             "cards": [
                 {
                     "id": "card1",
                     "title": "Task 1",
+                    "kanbanPosition": {"listId": "col1", "position": 0},
                 }
             ],
         }
@@ -259,6 +263,9 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Board State" in result.output
+        assert "Test Board" in result.output
+        assert "Columns" in result.output
+        assert "To Do" in result.output
         assert "Task 1" in result.output
 
     @patch("taskcards_monitor.cli.BoardMonitor")
@@ -292,27 +299,34 @@ class TestCLI:
         state_dir = tmp_path / ".cache" / "taskcards-monitor"
         state_dir.mkdir(parents=True)
 
-        # Create state files
+        # Create state files using new format
         board1_data = {
             "timestamp": "2025-01-01T12:00:00",
-            "columns": {"col1": {"name": "To Do", "position": 0, "color": None}},
-            "cards": {
-                "card1": {
-                    "title": "Task 1",
-                    "column_id": "col1",
-                    "position": 0,
-                    "description": "",
-                }
+            "board": {
+                "id": "board123",
+                "name": "My First Board",
+                "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+                "cards": [
+                    {
+                        "id": "card1",
+                        "title": "Task 1",
+                        "description": "",
+                    }
+                ],
             },
         }
 
         board2_data = {
             "timestamp": "2025-01-02T12:00:00",
-            "columns": {
-                "col1": {"name": "To Do", "position": 0, "color": None},
-                "col2": {"name": "Done", "position": 1, "color": None},
+            "board": {
+                "id": "board456",
+                "name": "My Second Board",
+                "lists": [
+                    {"id": "col1", "name": "To Do", "position": 0},
+                    {"id": "col2", "name": "Done", "position": 1},
+                ],
+                "cards": [],
             },
-            "cards": {},
         }
 
         with open(state_dir / "board123.json", "w") as f:
@@ -337,11 +351,13 @@ class TestCLI:
         state_dir = tmp_path / ".cache" / "taskcards-monitor"
         state_dir.mkdir(parents=True)
 
-        # Create valid state file
+        # Create valid state file using new format
         valid_data = {
             "timestamp": "2025-01-01T12:00:00",
-            "columns": {},
-            "cards": {},
+            "board": {
+                "lists": [],
+                "cards": [],
+            },
         }
         with open(state_dir / "board123.json", "w") as f:
             json.dump(valid_data, f)
@@ -367,6 +383,8 @@ class TestCLI:
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
 
         board_data = {
+            "id": "board123",
+            "name": "Test Board",
             "lists": [{"id": "col1", "name": "To Do", "position": 0}],
             "cards": [
                 {
@@ -384,7 +402,13 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Inspect Mode" in result.output
+        assert "Board Name" in result.output
+        assert "Test Board" in result.output
         assert "Board loaded successfully" in result.output
+        assert "Columns" in result.output
+        assert "To Do" in result.output
+        assert "Cards" in result.output
+        assert "Task 1" in result.output
         mock_fetcher_class.assert_called_once_with()
         mock_fetcher.fetch_board.assert_called_once_with("board123", token=None)
 

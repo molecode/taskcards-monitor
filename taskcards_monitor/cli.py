@@ -1,6 +1,5 @@
 """Command-line interface for TaskCards monitor."""
 
-import json
 from importlib.metadata import version
 from pathlib import Path
 
@@ -105,13 +104,6 @@ def list_boards():
     # Get the state directory (same logic as BoardMonitor.__init__)
     state_dir = Path.home() / ".cache" / "taskcards-monitor"
 
-    if not state_dir.exists():
-        console.print(
-            "[yellow]No boards have been checked yet.[/yellow]\n"
-            "Run 'taskcards-monitor check BOARD_ID' to monitor your first board."
-        )
-        return
-
     # Find all state files
     state_files = sorted(state_dir.glob("*.json"))
 
@@ -122,26 +114,25 @@ def list_boards():
         )
         return
 
-    # Load information from each state file
+    # Load information from each state file using BoardMonitor
     boards_info = []
     for state_file in state_files:
         board_id = state_file.stem  # filename without .json extension
-        try:
-            with open(state_file) as f:
-                data = json.load(f)
-                timestamp = data.get("timestamp", "Unknown")
-                cards_count = len(data.get("cards", {}))
+        monitor = BoardMonitor(board_id, state_dir=state_dir)
+        state = monitor.get_previous_state()
 
-                boards_info.append(
-                    {
-                        "board_id": board_id,
-                        "timestamp": timestamp,
-                        "cards": cards_count,
-                    }
-                )
-        except (json.JSONDecodeError, KeyError):
-            # Skip malformed files
+        if state is None:
+            # Skip invalid or corrupted state files
             continue
+
+        boards_info.append(
+            {
+                "board_id": board_id,
+                "board_name": state.board_name or "[dim]<unnamed>[/dim]",
+                "timestamp": state.timestamp,
+                "cards": len(state.cards),
+            }
+        )
 
     if not boards_info:
         console.print("[yellow]No valid board states found.[/yellow]")
@@ -164,8 +155,6 @@ def inspect(board_id: str, token: str | None):
     - Useful for verifying board access and structure
     """
 
-    display_inspect_header(board_id)
-
     try:
         console.print("\n[cyan]Fetching board data...[/cyan]")
 
@@ -174,6 +163,9 @@ def inspect(board_id: str, token: str | None):
 
         # Create state for display
         state = BoardState(data)
+
+        # Display header with board name
+        display_inspect_header(board_id, state.board_name or None)
 
         # Display results
         display_inspect_results(state)
