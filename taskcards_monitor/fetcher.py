@@ -186,12 +186,8 @@ class TaskCardsFetcher:
             if not board_data:
                 raise ValueError("No board data in response")
 
-            # Return in the expected format (with lists and cards at top level)
-            return {
-                "lists": board_data.get("lists", []),
-                "cards": board_data.get("cards", []),
-                "board": board_data,  # Include full board data for future use
-            }
+            # Return the board data directly
+            return board_data
 
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 404:

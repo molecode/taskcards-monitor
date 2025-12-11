@@ -18,13 +18,8 @@ class BoardState:
     def __post_init__(self):
         """Store the full board data."""
         # Store the complete board data from the GraphQL response
-        # The fetcher returns: {"lists": [...], "cards": [...], "board": {...}}
-        # We want to store the "board" object which contains everything
-        if "board" in self.data:
-            self._board_data = self.data["board"]
-        else:
-            # Fallback for old format or direct board data
-            self._board_data = self.data
+        # The fetcher returns the board object directly
+        self._board_data = self.data
 
     @property
     def cards(self) -> dict[str, dict[str, str]]:
@@ -92,28 +87,7 @@ class BoardState:
         """Create BoardState from serialized dictionary."""
         state = object.__new__(cls)
         state.timestamp = data["timestamp"]
-
-        # Handle both old and new format
-        if "board" in data:
-            # New format with full board data
-            state._board_data = data["board"]
-        elif "cards" in data:
-            # Old format with just cards dict
-            # Convert old format to new format structure
-            state._board_data = {
-                "cards": [
-                    {
-                        "id": card_id,
-                        "title": card_data.get("title", ""),
-                        "description": card_data.get("description", ""),
-                    }
-                    for card_id, card_data in data["cards"].items()
-                ],
-                "lists": [],
-            }
-        else:
-            state._board_data = {}
-
+        state._board_data = data["board"]
         state.data = {}
         return state
 
@@ -177,4 +151,63 @@ class BoardMonitor:
         Returns:
             Dictionary containing detected changes
         """
-        raise NotImplementedError()
+        current_cards = current.cards
+        previous_cards = previous.cards if previous else {}
+
+        if previous is None:
+            return {
+                "is_first_run": True,
+                "cards_count": len(current_cards),
+                "cards_added": [],
+                "cards_removed": [],
+                "cards_changed": [],
+            }
+
+        # Cards added/removed
+        added_ids = set(current_cards) - set(previous_cards)
+        removed_ids = set(previous_cards) - set(current_cards)
+        common_ids = set(current_cards) & set(previous_cards)
+
+        cards_added = [
+            {
+                "id": card_id,
+                "title": current_cards[card_id].get("title", ""),
+                "description": current_cards[card_id].get("description", ""),
+            }
+            for card_id in added_ids
+        ]
+
+        cards_removed = [
+            {
+                "id": card_id,
+                "title": previous_cards[card_id].get("title", ""),
+                "description": previous_cards[card_id].get("description", ""),
+            }
+            for card_id in removed_ids
+        ]
+
+        cards_changed = []
+        for card_id in common_ids:
+            curr = current_cards[card_id]
+            prev = previous_cards[card_id]
+
+            title_changed = curr.get("title", "") != prev.get("title", "")
+            desc_changed = curr.get("description", "") != prev.get("description", "")
+
+            if title_changed or desc_changed:
+                cards_changed.append(
+                    {
+                        "id": card_id,
+                        "old_title": prev.get("title", ""),
+                        "new_title": curr.get("title", ""),
+                        "old_description": prev.get("description", ""),
+                        "new_description": curr.get("description", ""),
+                    }
+                )
+
+        return {
+            "is_first_run": False,
+            "cards_added": cards_added,
+            "cards_removed": cards_removed,
+            "cards_changed": cards_changed,
+        }
