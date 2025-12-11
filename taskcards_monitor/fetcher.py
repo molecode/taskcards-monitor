@@ -186,7 +186,6 @@ class TaskCardsFetcher:
             if not board_data:
                 raise ValueError("No board data in response")
 
-            # Return the board data directly
             return board_data
 
         except httpx.HTTPStatusError as e:
