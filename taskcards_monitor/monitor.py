@@ -143,4 +143,68 @@ class BoardMonitor:
         Returns:
             Dictionary containing detected changes
         """
-        raise NotImplementedError("Not implemented")
+        current_cards = current.cards
+        previous_cards = previous.cards if previous else {}
+
+        if previous is None:
+            return {
+                "is_first_run": True,
+                "cards_count": len(current_cards),
+                "cards_added": [],
+                "cards_removed": [],
+                "cards_changed": [],
+            }
+
+        # Create sets once for efficient set operations
+        current_ids = set(current_cards)
+        previous_ids = set(previous_cards)
+        added_ids = current_ids - previous_ids
+        removed_ids = previous_ids - current_ids
+        common_ids = current_ids & previous_ids
+
+        # Build added cards list (avoid repeated lookups)
+        cards_added = [
+            {
+                "id": card_id,
+                "title": (card := current_cards[card_id]).get("title", ""),
+                "description": card.get("description", ""),
+            }
+            for card_id in added_ids
+        ]
+
+        # Build removed cards list (avoid repeated lookups)
+        cards_removed = [
+            {
+                "id": card_id,
+                "title": (card := previous_cards[card_id]).get("title", ""),
+                "description": card.get("description", ""),
+            }
+            for card_id in removed_ids
+        ]
+
+        # Build changed cards list (extract values once per card)
+        def _get_changed_card(card_id: str) -> dict[str, Any] | None:
+            curr = current_cards[card_id]
+            prev = previous_cards[card_id]
+
+            curr_title, curr_desc = curr.get("title", ""), curr.get("description", "")
+            prev_title, prev_desc = prev.get("title", ""), prev.get("description", "")
+
+            if curr_title != prev_title or curr_desc != prev_desc:
+                return {
+                    "id": card_id,
+                    "old_title": prev_title,
+                    "new_title": curr_title,
+                    "old_description": prev_desc,
+                    "new_description": curr_desc,
+                }
+            return None
+
+        cards_changed = [card for card_id in common_ids if (card := _get_changed_card(card_id))]
+
+        return {
+            "is_first_run": False,
+            "cards_added": cards_added,
+            "cards_removed": cards_removed,
+            "cards_changed": cards_changed,
+        }
