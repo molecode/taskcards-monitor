@@ -125,9 +125,10 @@ class TestTaskCardsFetcher:
 
         fetcher._create_visitor.assert_called_once()
         fetcher._grant_access.assert_called_once_with("board123", "secret")
+        # After simplification, fetch_board returns board data directly (not wrapped)
+        assert result["id"] == "board123"
         assert result["lists"] == [{"id": "list1"}]
         assert result["cards"] == [{"id": "card1"}]
-        assert result["board"]["id"] == "board123"
 
     def test_fetch_board_graphql_error(self):
         """GraphQL errors are surfaced as ValueError."""
