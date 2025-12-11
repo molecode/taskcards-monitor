@@ -6,8 +6,9 @@
 
 - Monitor both **public and private** TaskCards boards
 - Detect added/removed cards
-- Detect card title changes
-- Persistent state tracking
+- Detect card title and description changes
+- Track card positions and movements
+- Persistent state tracking with full board data
 
 ## Installation
 
@@ -86,13 +87,14 @@ When changes are detected:
 │ New homework assignment               │
 └───────────────────────────────────────┘
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            Cards Changed                      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-┃ Old Title       │ New Title                   ┃
-├─────────────────┼─────────────────────────────┤
-│ Old assignment  │ Updated assignment details  │
-└─────────────────┴─────────────────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃            Cards Changed                                            ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+┃ Field       │ Old Value                │ New Value                  ┃
+├─────────────┼──────────────────────────┼────────────────────────────┤
+│ Title       │ Old assignment           │ Updated assignment details │
+│ Description │ Original description     │ Updated with more details  │
+└─────────────┴──────────────────────────┴────────────────────────────┘
 ```
 
 ## Development
@@ -132,7 +134,7 @@ taskcards_monitor/
 Planned features (not yet implemented):
 - Email notifications
 - Change history tracking
-- Track card descriptions and other metadata
+- Track additional card metadata (labels, attachments, due dates, etc.)
 
 ## Contributing
 
