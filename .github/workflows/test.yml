@@ -30,10 +30,6 @@ jobs:
         run: |
           uv sync --all-extras --dev
 
-      - name: Install Playwright browsers
-        run: |
-          uv run playwright install chromium --with-deps
-
       - name: Run linter
         run: |
           uv run ruff check .
