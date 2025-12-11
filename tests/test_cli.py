@@ -243,10 +243,14 @@ class TestCLI:
 
         # Create board state
         data = {
+            "id": "board123",
+            "name": "Test Board",
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
             "cards": [
                 {
                     "id": "card1",
                     "title": "Task 1",
+                    "kanbanPosition": {"listId": "col1", "position": 0},
                 }
             ],
         }
@@ -259,6 +263,9 @@ class TestCLI:
         # Verify
         assert result.exit_code == 0
         assert "Board State" in result.output
+        assert "Test Board" in result.output
+        assert "Columns" in result.output
+        assert "To Do" in result.output
         assert "Task 1" in result.output
 
     @patch("taskcards_monitor.cli.BoardMonitor")
