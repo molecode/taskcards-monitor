@@ -13,18 +13,6 @@ class BoardState:
 
     data: dict[str, Any]
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
-    _board_data: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
-
-    def __post_init__(self):
-        """Store the full board data."""
-        # Store the complete board data from the GraphQL response
-        # The fetcher returns: {"lists": [...], "cards": [...], "board": {...}}
-        # We want to store the "board" object which contains everything
-        if "board" in self.data:
-            self._board_data = self.data["board"]
-        else:
-            # Fallback for old format or direct board data
-            self._board_data = self.data
 
     @property
     def cards(self) -> dict[str, dict[str, str]]:
@@ -35,7 +23,7 @@ class BoardState:
         This maintains backward compatibility with existing display code.
         """
         cards_dict = {}
-        cards_list = self._board_data.get("cards", [])
+        cards_list = self.data.get("cards", [])
 
         for card in cards_list:
             card_id = card.get("id")
@@ -50,17 +38,17 @@ class BoardState:
     @property
     def lists(self) -> list[dict[str, Any]]:
         """Get all lists from the board."""
-        return self._board_data.get("lists", [])
+        return self.data.get("lists", [])
 
     @property
     def board_name(self) -> str:
         """Get the board name."""
-        return self._board_data.get("name", "")
+        return self.data.get("name", "")
 
     @property
     def board_description(self) -> str:
         """Get the board description."""
-        return self._board_data.get("description", "")
+        return self.data.get("description", "")
 
     def get_card(self, card_id: str) -> dict[str, Any] | None:
         """
@@ -68,14 +56,14 @@ class BoardState:
 
         Returns complete card object with all fields including kanbanPosition.
         """
-        for card in self._board_data.get("cards", []):
+        for card in self.data.get("cards", []):
             if card.get("id") == card_id:
                 return card
         return None
 
     def get_list(self, list_id: str) -> dict[str, Any] | None:
         """Get list data by ID."""
-        for lst in self._board_data.get("lists", []):
+        for lst in self.data.get("lists", []):
             if lst.get("id") == list_id:
                 return lst
         return None
@@ -84,7 +72,7 @@ class BoardState:
         """Convert board state to dictionary for serialization."""
         return {
             "timestamp": self.timestamp,
-            "board": self._board_data,
+            "board": self.data,
         }
 
     @classmethod
@@ -92,29 +80,7 @@ class BoardState:
         """Create BoardState from serialized dictionary."""
         state = object.__new__(cls)
         state.timestamp = data["timestamp"]
-
-        # Handle both old and new format
-        if "board" in data:
-            # New format with full board data
-            state._board_data = data["board"]
-        elif "cards" in data:
-            # Old format with just cards dict
-            # Convert old format to new format structure
-            state._board_data = {
-                "cards": [
-                    {
-                        "id": card_id,
-                        "title": card_data.get("title", ""),
-                        "description": card_data.get("description", ""),
-                    }
-                    for card_id, card_data in data["cards"].items()
-                ],
-                "lists": [],
-            }
-        else:
-            state._board_data = {}
-
-        state.data = {}
+        state.data = data["board"]
         return state
 
 
@@ -177,4 +143,4 @@ class BoardMonitor:
         Returns:
             Dictionary containing detected changes
         """
-        raise NotImplementedError()
+        raise NotImplementedError("Not implemented")
