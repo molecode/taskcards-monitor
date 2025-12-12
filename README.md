@@ -6,8 +6,8 @@
 
 - Monitor both **public and private** TaskCards boards
 - Detect added/removed cards
-- Detect card title changes
-- Persistent state tracking
+- Detect card title and description changes
+- Persistent state tracking with full board data
 
 ## Installation
 
@@ -73,28 +73,6 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
 
 State files are saved in `~/.cache/taskcards-monitor/BOARD_ID.json`
 
-## Output Example
-
-When changes are detected:
-
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            Cards Added                ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-┃ Title                                 ┃
-├───────────────────────────────────────┤
-│ New homework assignment               │
-└───────────────────────────────────────┘
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃            Cards Changed                      ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-┃ Old Title       │ New Title                   ┃
-├─────────────────┼─────────────────────────────┤
-│ Old assignment  │ Updated assignment details  │
-└─────────────────┴─────────────────────────────┘
-```
-
 ## Development
 
 ```bash
@@ -132,7 +110,6 @@ taskcards_monitor/
 Planned features (not yet implemented):
 - Email notifications
 - Change history tracking
-- Track card descriptions and other metadata
 
 ## Contributing
 
