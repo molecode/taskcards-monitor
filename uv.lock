@@ -212,14 +212,14 @@ wheels = [
 
 [[package]]
 name = "jinja2"
-version = "3.1.6"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/93/99a76d0fa1a8fc14442a6421abee323f8d15964979336eabd2a1834e9118/Jinja2-3.1.0.tar.gz", hash = "sha256:a2f09a92f358b96b5f6ca6ecb4502669c4acb55d8733bbb2b2c9c4af5564c605", size = 266923, upload-time = "2022-03-24T14:14:03.573Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/82/743248f82f147e54a404163c7e12969f4c2436bdfe7c39bf6b5c7a273f3f/Jinja2-3.1.0-py3-none-any.whl", hash = "sha256:da424924c069a4013730d8dd010cbecac7e7bb752be388db3741688bffb48dc6", size = 132565, upload-time = "2022-03-24T14:14:01.622Z" },
 ]
 
 [[package]]
@@ -520,7 +520,7 @@ requires-dist = [
     { name = "click", specifier = "==8.3.1" },
     { name = "httpx", specifier = "==0.28.1" },
     { name = "jinja2", specifier = ">=3.1.0" },
-    { name = "pyyaml", specifier = ">=6.0.0" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "rich", specifier = "==14.2.0" },
 ]
 
