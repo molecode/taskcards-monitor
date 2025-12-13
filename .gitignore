@@ -209,3 +209,6 @@ __marimo__/
 CLAUDE.md
 .claude
 .playwright-mcp
+
+# Email configuration (contains credentials)
+email-config.yaml
