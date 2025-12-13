@@ -13,6 +13,7 @@ from .display import (
     display_inspect_results,
     display_state,
 )
+from .email_notifier import EmailConfig, EmailNotifier
 from .fetcher import TaskCardsFetcher
 from .monitor import BoardMonitor, BoardState
 
@@ -28,13 +29,35 @@ def main():
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
-def check(board_id: str, token: str | None, verbose: bool):
+@click.option(
+    "--email-config",
+    "-e",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to email configuration YAML file",
+)
+def check(board_id: str, token: str | None, verbose: bool, email_config: Path | None):
     """Check a board for changes and log any differences."""
 
     if verbose:
         console.print(f"[dim]Checking board: {board_id}[/dim]")
         if token:
             console.print(f"[dim]Using view token: {token[:8]}...[/dim]")
+        if email_config:
+            console.print(f"[dim]Email notifications enabled: {email_config}[/dim]")
+
+    # Initialize email notifier if config provided
+    email_notifier = None
+    if email_config:
+        try:
+            email_config_obj = EmailConfig(email_config)
+            email_notifier = EmailNotifier(email_config_obj)
+            if verbose:
+                console.print(
+                    f"[dim]Email notifications will be sent to: {', '.join(email_config_obj.to_emails)}[/dim]"
+                )
+        except Exception as e:
+            console.print(f"[bold red]Error loading email config:[/bold red] {str(e)}")
+            raise click.Abort() from e
 
     # Initialize monitor
     monitor = BoardMonitor(board_id)
@@ -71,6 +94,45 @@ def check(board_id: str, token: str | None, verbose: bool):
 
     # Display changes
     display_changes(changes)
+
+    # Send email notification if configured and changes detected
+    if email_notifier and not changes["is_first_run"]:
+        has_changes = changes["cards_added"] or changes["cards_removed"] or changes["cards_changed"]
+
+        if has_changes:
+            try:
+                if verbose:
+                    console.print("[dim]Sending email notification...[/dim]")
+
+                # Prepare changed cards with title_changed and description_changed flags
+                changed_cards_for_email = []
+                for card in changes["cards_changed"]:
+                    card_info = {
+                        "id": card["id"],
+                        "title": card["new_title"],
+                        "old_title": card["old_title"],
+                        "new_title": card["new_title"],
+                        "title_changed": card["old_title"] != card["new_title"],
+                        "description_changed": card["old_description"] != card["new_description"],
+                    }
+                    changed_cards_for_email.append(card_info)
+
+                email_notifier.send_notification(
+                    board_id=board_id,
+                    timestamp=current_state.timestamp,
+                    added_cards=changes["cards_added"],
+                    removed_cards=changes["cards_removed"],
+                    changed_cards=changed_cards_for_email,
+                )
+
+                console.print("[green]✓[/green] Email notification sent")
+
+            except Exception as e:
+                console.print(f"[bold red]Error sending email:[/bold red] {str(e)}")
+                if verbose:
+                    import traceback
+
+                    console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
     # Save current state
     monitor.save_state(current_state)

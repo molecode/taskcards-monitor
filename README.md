@@ -8,6 +8,7 @@
 - Detect added/removed cards
 - Detect card title and description changes
 - Persistent state tracking with full board data
+- **Email notifications** when changes are detected (optional)
 
 ## Installation
 
@@ -49,6 +50,7 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
 - `--token TOKEN` or `-t TOKEN` - View token for private/protected boards
 - `-v, --verbose` - Enable verbose logging
+- `--email-config PATH` or `-e PATH` - Path to email configuration YAML file (enables email notifications)
 
 ### Examples
 
@@ -67,6 +69,58 @@ uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
 
 # Verbose mode (shows detailed progress)
 uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
+
+# With email notifications
+uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+```
+
+## Email Notifications
+
+Get notified via email when changes are detected on your boards.
+
+### Setup
+
+1. Copy the example configuration file:
+```bash
+cp email-config.example.yaml email-config.yaml
+```
+
+2. Edit `email-config.yaml` with your SMTP settings and recipient emails:
+```yaml
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  use_tls: true
+  username: your-email@gmail.com
+  password: your-app-password
+
+email:
+  from: your-email@gmail.com
+  from_name: TaskCards Monitor
+  to:
+    - recipient1@example.com
+    - recipient2@example.com
+  subject: "TaskCards Board Changes Detected"
+```
+
+3. Run the check command with the email config:
+```bash
+uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+```
+
+### Gmail Setup
+
+For Gmail users:
+1. Enable 2-factor authentication on your Google account
+2. Generate an [app-specific password](https://support.google.com/accounts/answer/185833)
+3. Use the app password in your email-config.yaml
+
+### Features
+
+- Beautiful HTML email with styled change summaries
+- Shows added, removed, and changed cards
+- Includes card titles and descriptions
+- Only sends emails when changes are detected (not on first run)
 ```
 
 ## State Files
@@ -108,7 +162,6 @@ taskcards_monitor/
 ## Future Enhancements
 
 Planned features (not yet implemented):
-- Email notifications
 - Change history tracking
 
 ## Contributing
