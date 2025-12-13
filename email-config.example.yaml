@@ -18,4 +18,5 @@ email:
   to:
     - recipient1@example.com
     - recipient2@example.com
-  subject: "TaskCards Board Changes Detected"
+  # Subject line (supports Jinja2 variables: board_name, board_id, added_count, removed_count, changed_count)
+  subject: "📋 Changes on {{ board_name }} - {{ added_count }} added, {{ removed_count }} removed, {{ changed_count }} changed"

@@ -144,10 +144,11 @@ EMAIL_TEMPLATE = """
     </style>
 </head>
 <body>
-    <h1>📋 TaskCards Board Update</h1>
+    <h1>📋 {{ board_name }}</h1>
 
     <div class="board-info">
         <strong>Board ID:</strong> {{ board_id }}<br>
+        <strong>Board Name:</strong> {{ board_name }}<br>
         <strong>Checked at:</strong> {{ timestamp }}
     </div>
 
@@ -216,8 +217,12 @@ EMAIL_TEMPLATE = """
     {% endif %}
 
     <div class="footer">
-        This email was sent by taskcards-monitor.
-        Board ID: {{ board_id }}
+        <p>This email was sent by <strong>taskcards-monitor</strong>, an open source TaskCards monitoring tool.</p>
+        <p>
+            🔗 <a href="https://github.com/molecode/taskcards-monitor" style="color: #3498db;">GitHub Repository</a> |
+            🐛 <a href="https://github.com/molecode/taskcards-monitor/issues" style="color: #3498db;">Issue Tracker</a>
+        </p>
+        <p style="margin-top: 10px; font-size: 11px;">Board: {{ board_name }} ({{ board_id }})</p>
     </div>
 </body>
 </html>
@@ -239,6 +244,7 @@ class EmailNotifier:
     def send_notification(
         self,
         board_id: str,
+        board_name: str | None,
         timestamp: str,
         added_cards: list[dict[str, Any]],
         removed_cards: list[dict[str, Any]],
@@ -248,26 +254,35 @@ class EmailNotifier:
 
         Args:
             board_id: The board identifier
+            board_name: The board name (optional)
             timestamp: Timestamp of the check
             added_cards: List of added cards
             removed_cards: List of removed cards
             changed_cards: List of changed cards
         """
+        # Prepare template context
+        context = {
+            "board_id": board_id,
+            "board_name": board_name or board_id,
+            "timestamp": timestamp,
+            "added_cards": added_cards,
+            "removed_cards": removed_cards,
+            "changed_cards": changed_cards,
+            "added_count": len(added_cards),
+            "removed_count": len(removed_cards),
+            "changed_count": len(changed_cards),
+        }
+
+        # Render subject with Jinja2 variables
+        subject_template = Template(self.config.subject)
+        subject = subject_template.render(**context)
+
         # Generate HTML content
-        html_content = self.template.render(
-            board_id=board_id,
-            timestamp=timestamp,
-            added_cards=added_cards,
-            removed_cards=removed_cards,
-            changed_cards=changed_cards,
-            added_count=len(added_cards),
-            removed_count=len(removed_cards),
-            changed_count=len(changed_cards),
-        )
+        html_content = self.template.render(**context)
 
         # Create message
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = self.config.subject
+        msg["Subject"] = subject
         msg["From"] = (
             f"{self.config.from_name} <{self.config.from_email}>"
             if self.config.from_name

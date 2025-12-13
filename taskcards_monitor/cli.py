@@ -119,6 +119,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
 
                 email_notifier.send_notification(
                     board_id=board_id,
+                    board_name=current_state.board_name,
                     timestamp=current_state.timestamp,
                     added_cards=changes["cards_added"],
                     removed_cards=changes["cards_removed"],

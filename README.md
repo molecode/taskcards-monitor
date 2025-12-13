@@ -100,7 +100,8 @@ email:
   to:
     - recipient1@example.com
     - recipient2@example.com
-  subject: "TaskCards Board Changes Detected"
+  # Subject supports Jinja2 variables: board_name, board_id, added_count, removed_count, changed_count
+  subject: "📋 Changes on {{ board_name }} - {{ added_count }} added, {{ removed_count }} removed"
 ```
 
 3. Run the check command with the email config:
@@ -118,9 +119,12 @@ For Gmail users:
 ### Features
 
 - Beautiful HTML email with styled change summaries
+- Board name displayed prominently in subject and email body
+- Customizable subject line with Jinja2 template variables
 - Shows added, removed, and changed cards
 - Includes card titles and descriptions
 - Only sends emails when changes are detected (not on first run)
+- Links to GitHub repository and issue tracker in footer
 ```
 
 ## State Files
