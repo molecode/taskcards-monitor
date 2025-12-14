@@ -13,6 +13,7 @@ from .display import (
     display_inspect_results,
     display_state,
 )
+from .email_notifier import EmailNotifier
 from .fetcher import TaskCardsFetcher
 from .monitor import BoardMonitor, BoardState
 
@@ -28,13 +29,21 @@ def main():
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
-def check(board_id: str, token: str | None, verbose: bool):
+@click.option(
+    "--email-config",
+    "-e",
+    type=click.Path(exists=True, path_type=Path),
+    help="Path to email configuration YAML file",
+)
+def check(board_id: str, token: str | None, verbose: bool, email_config: Path | None):
     """Check a board for changes and log any differences."""
 
     if verbose:
         console.print(f"[dim]Checking board: {board_id}[/dim]")
         if token:
             console.print(f"[dim]Using view token: {token[:8]}...[/dim]")
+        if email_config:
+            console.print(f"[dim]Email notifications enabled: {email_config}[/dim]")
 
     # Initialize monitor
     monitor = BoardMonitor(board_id)
@@ -71,6 +80,32 @@ def check(board_id: str, token: str | None, verbose: bool):
 
     # Display changes
     display_changes(changes)
+
+    # Send email notification if configured
+    if email_config:
+        try:
+            if verbose:
+                console.print("[dim]Sending email notification...[/dim]")
+
+            notifier = EmailNotifier(email_config)
+            email_sent = notifier.notify_changes(
+                board_id=board_id,
+                board_name=current_state.board_name,
+                timestamp=current_state.timestamp,
+                changes=changes,
+            )
+
+            if email_sent:
+                console.print("[green]✓[/green] Email notification sent")
+            elif verbose:
+                console.print("[dim]No email sent (no changes or first run)[/dim]")
+
+        except Exception as e:
+            console.print(f"[bold red]Error sending email:[/bold red] {str(e)}")
+            if verbose:
+                import traceback
+
+                console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
     # Save current state
     monitor.save_state(current_state)

@@ -8,6 +8,7 @@
 - Detect added/removed cards
 - Detect card title and description changes
 - Persistent state tracking with full board data
+- **Email notifications** when changes are detected (optional)
 
 ## Installation
 
@@ -49,6 +50,7 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
 - `--token TOKEN` or `-t TOKEN` - View token for private/protected boards
 - `-v, --verbose` - Enable verbose logging
+- `--email-config PATH` or `-e PATH` - Path to email configuration YAML file (enables email notifications)
 
 ### Examples
 
@@ -67,6 +69,51 @@ uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
 
 # Verbose mode (shows detailed progress)
 uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
+
+# With email notifications
+uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+```
+
+## Email Notifications
+
+Get notified via email when changes are detected on your boards.
+
+### Setup
+
+1. Copy the example configuration file:
+```bash
+cp email-config.example.yaml email-config.yaml
+```
+
+2. Edit `email-config.yaml` with your SMTP settings and recipient emails:
+```yaml
+smtp:
+  host: <smtp-server>
+  port: 587
+  use_tls: true
+  username: <your-username>
+  password: <your-password>
+
+email:
+  from: your-email@gmail.com
+  from_name: TaskCards Monitor
+  to:
+    - recipient1@example.com
+    - recipient2@example.com
+  # Subject supports Jinja2 variables: board_name, board_id, added_count, removed_count, changed_count
+  subject: "📋 Changes on {{ board_name }} - {{ added_count }} added, {{ removed_count }} removed"
+```
+
+3. Run the check command with the email config:
+```bash
+uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+```
+
+### Features
+
+- Customizable subject line with Jinja2 template variables
+- Shows added, removed, and changed cards
+- Only sends emails when changes are detected (not on first run)
 ```
 
 ## State Files
@@ -108,7 +155,6 @@ taskcards_monitor/
 ## Future Enhancements
 
 Planned features (not yet implemented):
-- Email notifications
 - Change history tracking
 
 ## Contributing

@@ -1,0 +1,22 @@
+# Email notification configuration for taskcards-monitor
+# Copy this file to email-config.yaml and customize it
+
+# SMTP server settings
+smtp:
+  host: smtp.gmail.com
+  port: 587
+  use_tls: true
+  # For Gmail, use an app-specific password: https://support.google.com/accounts/answer/185833
+  username: your-email@gmail.com
+  password: your-app-password
+
+# Email settings
+email:
+  from: your-email@gmail.com
+  from_name: TaskCards Monitor
+  # List of recipients to notify
+  to:
+    - recipient1@example.com
+    - recipient2@example.com
+  # Subject line (supports Jinja2 variables: board_name, board_id, added_count, removed_count, changed_count)
+  subject: "📋 Changes on {{ board_name }} - {{ added_count }} added, {{ removed_count }} removed, {{ changed_count }} changed"
