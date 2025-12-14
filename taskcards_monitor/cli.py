@@ -94,32 +94,30 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
     # Display changes
     display_changes(changes)
 
-    # Send email notification if configured and changes detected
-    if email_notifier and not changes["is_first_run"]:
-        has_changes = changes["cards_added"] or changes["cards_removed"] or changes["cards_changed"]
+    # Send email notification if configured
+    if email_notifier:
+        try:
+            if verbose:
+                console.print("[dim]Checking if email notification should be sent...[/dim]")
 
-        if has_changes:
-            try:
-                if verbose:
-                    console.print("[dim]Sending email notification...[/dim]")
+            email_sent = email_notifier.notify_changes(
+                board_id=board_id,
+                board_name=current_state.board_name,
+                timestamp=current_state.timestamp,
+                changes=changes,
+            )
 
-                email_notifier.send_notification(
-                    board_id=board_id,
-                    board_name=current_state.board_name,
-                    timestamp=current_state.timestamp,
-                    added_cards=changes["cards_added"],
-                    removed_cards=changes["cards_removed"],
-                    changed_cards=changes["cards_changed"],
-                )
-
+            if email_sent:
                 console.print("[green]✓[/green] Email notification sent")
+            elif verbose:
+                console.print("[dim]No email sent (no changes or first run)[/dim]")
 
-            except Exception as e:
-                console.print(f"[bold red]Error sending email:[/bold red] {str(e)}")
-                if verbose:
-                    import traceback
+        except Exception as e:
+            console.print(f"[bold red]Error sending email:[/bold red] {str(e)}")
+            if verbose:
+                import traceback
 
-                    console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                console.print(f"[dim]{traceback.format_exc()}[/dim]")
 
     # Save current state
     monitor.save_state(current_state)

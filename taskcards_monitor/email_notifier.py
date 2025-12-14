@@ -91,6 +91,46 @@ class EmailNotifier:
             prepared_cards.append(card_info)
         return prepared_cards
 
+    def notify_changes(
+        self,
+        board_id: str,
+        board_name: str | None,
+        timestamp: str,
+        changes: dict[str, Any],
+    ) -> bool:
+        """Send email notification if there are changes (not on first run).
+
+        Args:
+            board_id: The board identifier
+            board_name: The board name (optional)
+            timestamp: Timestamp of the check
+            changes: Changes dictionary from BoardMonitor.detect_changes()
+
+        Returns:
+            True if email was sent, False otherwise
+        """
+        # Don't send email on first run
+        if changes["is_first_run"]:
+            return False
+
+        # Check if there are any changes
+        has_changes = changes["cards_added"] or changes["cards_removed"] or changes["cards_changed"]
+
+        if not has_changes:
+            return False
+
+        # Send the notification
+        self.send_notification(
+            board_id=board_id,
+            board_name=board_name,
+            timestamp=timestamp,
+            added_cards=changes["cards_added"],
+            removed_cards=changes["cards_removed"],
+            changed_cards=changes["cards_changed"],
+        )
+
+        return True
+
     def send_notification(
         self,
         board_id: str,
