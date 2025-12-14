@@ -48,197 +48,6 @@ class EmailConfig:
             raise ValueError("At least one 'to' email address is required in config")
 
 
-# HTML email template
-EMAIL_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
-        }
-        h2 {
-            color: #34495e;
-            margin-top: 30px;
-            margin-bottom: 15px;
-        }
-        .board-info {
-            background-color: #f8f9fa;
-            border-left: 4px solid #3498db;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        .changes-section {
-            margin: 25px 0;
-        }
-        .card-list {
-            list-style: none;
-            padding: 0;
-        }
-        .card-item {
-            background: #fff;
-            border: 1px solid #e1e4e8;
-            border-radius: 6px;
-            padding: 12px 15px;
-            margin: 8px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .card-item.added {
-            border-left: 4px solid #27ae60;
-            background-color: #f0fdf4;
-        }
-        .card-item.removed {
-            border-left: 4px solid #e74c3c;
-            background-color: #fef2f2;
-        }
-        .card-item.changed {
-            border-left: 4px solid #f39c12;
-            background-color: #fffbeb;
-        }
-        .card-title {
-            font-weight: 600;
-            color: #1a202c;
-            margin-bottom: 5px;
-        }
-        .card-description {
-            color: #666;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .change-detail {
-            font-size: 13px;
-            color: #666;
-            font-style: italic;
-        }
-        .no-changes {
-            color: #666;
-            font-style: italic;
-            padding: 10px;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #e1e4e8;
-            font-size: 12px;
-            color: #999;
-        }
-        .summary {
-            background-color: #eef2ff;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-        .summary strong {
-            color: #3730a3;
-        }
-    </style>
-</head>
-<body>
-    <h1>📋 {{ board_name }}</h1>
-
-    <div class="board-info">
-        <strong>Checked at:</strong> {{ timestamp }}
-    </div>
-
-    <div class="summary">
-        <strong>Summary:</strong>
-        {{ added_count }} added, {{ removed_count }} removed, {{ changed_count }} changed
-    </div>
-
-    {% if added_cards %}
-    <div class="changes-section">
-        <h2>✅ Added Cards ({{ added_cards|length }})</h2>
-        <ul class="card-list">
-            {% for card in added_cards %}
-            <li class="card-item added">
-                <div class="card-title">{{ card.title }}</div>
-                {% if card.description %}
-                <div class="card-description">{{ card.description }}</div>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-    {% if changed_cards %}
-    <div class="changes-section">
-        <h2>📝 Changed Cards ({{ changed_cards|length }})</h2>
-        <ul class="card-list">
-            {% for card in changed_cards %}
-            <li class="card-item changed">
-                <div class="card-title">{{ card.new_title or card.title }}</div>
-                {% if card.title_changed %}
-                <div class="change-detail">
-                    <strong>Title:</strong><br>
-                    <span style="color: #e74c3c;">❌ {{ card.old_title }}</span><br>
-                    <span style="color: #27ae60;">✅ {{ card.new_title }}</span>
-                </div>
-                {% endif %}
-                {% if card.description_changed %}
-                <div class="change-detail" style="margin-top: 8px;">
-                    <strong>Description:</strong><br>
-                    {% if card.old_description %}
-                    <span style="color: #e74c3c;">❌ {{ card.old_description }}</span><br>
-                    {% else %}
-                    <span style="color: #999; font-style: italic;">❌ (empty)</span><br>
-                    {% endif %}
-                    {% if card.new_description %}
-                    <span style="color: #27ae60;">✅ {{ card.new_description }}</span>
-                    {% else %}
-                    <span style="color: #999; font-style: italic;">✅ (empty)</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-    {% if removed_cards %}
-    <div class="changes-section">
-        <h2>❌ Removed Cards ({{ removed_cards|length }})</h2>
-        <ul class="card-list">
-            {% for card in removed_cards %}
-            <li class="card-item removed">
-                <div class="card-title">{{ card.title }}</div>
-                {% if card.description %}
-                <div class="card-description">{{ card.description }}</div>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-    {% if not added_cards and not removed_cards and not changed_cards %}
-    <div class="no-changes">No changes detected.</div>
-    {% endif %}
-
-    <div class="footer">
-        <p>This email was sent by <strong>taskcards-monitor</strong>, an open source TaskCards monitoring tool.</p>
-        <p>
-            🔗 <a href="https://github.com/molecode/taskcards-monitor" style="color: #3498db;">GitHub Repository</a> |
-            🐛 <a href="https://github.com/molecode/taskcards-monitor/issues" style="color: #3498db;">Issue Tracker</a>
-        </p>
-        <p style="margin-top: 10px; font-size: 11px;">Board: {{ board_name }} ({{ board_id }})</p>
-    </div>
-</body>
-</html>
-"""
-
-
 class EmailNotifier:
     """Send email notifications about board changes."""
 
@@ -249,7 +58,37 @@ class EmailNotifier:
             config: EmailConfig instance with SMTP and email settings
         """
         self.config = config
-        self.template = Template(EMAIL_TEMPLATE)
+
+        # Load email template from file
+        template_path = Path(__file__).parent / "email_template.html"
+        with open(template_path) as f:
+            template_content = f.read()
+        self.template = Template(template_content)
+
+    @staticmethod
+    def _prepare_changed_cards(changed_cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Transform changed cards data for email template.
+
+        Args:
+            changed_cards: List of changed cards from monitor
+
+        Returns:
+            List of changed cards with title_changed and description_changed flags
+        """
+        prepared_cards = []
+        for card in changed_cards:
+            card_info = {
+                "id": card["id"],
+                "title": card["new_title"],
+                "old_title": card["old_title"],
+                "new_title": card["new_title"],
+                "old_description": card["old_description"],
+                "new_description": card["new_description"],
+                "title_changed": card["old_title"] != card["new_title"],
+                "description_changed": card["old_description"] != card["new_description"],
+            }
+            prepared_cards.append(card_info)
+        return prepared_cards
 
     def send_notification(
         self,
@@ -270,6 +109,9 @@ class EmailNotifier:
             removed_cards: List of removed cards
             changed_cards: List of changed cards
         """
+        # Prepare changed cards for template
+        prepared_changed_cards = self._prepare_changed_cards(changed_cards)
+
         # Prepare template context
         context = {
             "board_id": board_id,
@@ -277,7 +119,7 @@ class EmailNotifier:
             "timestamp": timestamp,
             "added_cards": added_cards,
             "removed_cards": removed_cards,
-            "changed_cards": changed_cards,
+            "changed_cards": prepared_changed_cards,
             "added_count": len(added_cards),
             "removed_count": len(removed_cards),
             "changed_count": len(changed_cards),

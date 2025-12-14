@@ -104,28 +104,13 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
                 if verbose:
                     console.print("[dim]Sending email notification...[/dim]")
 
-                # Prepare changed cards with title_changed and description_changed flags
-                changed_cards_for_email = []
-                for card in changes["cards_changed"]:
-                    card_info = {
-                        "id": card["id"],
-                        "title": card["new_title"],
-                        "old_title": card["old_title"],
-                        "new_title": card["new_title"],
-                        "old_description": card["old_description"],
-                        "new_description": card["new_description"],
-                        "title_changed": card["old_title"] != card["new_title"],
-                        "description_changed": card["old_description"] != card["new_description"],
-                    }
-                    changed_cards_for_email.append(card_info)
-
                 email_notifier.send_notification(
                     board_id=board_id,
                     board_name=current_state.board_name,
                     timestamp=current_state.timestamp,
                     added_cards=changes["cards_added"],
                     removed_cards=changes["cards_removed"],
-                    changed_cards=changed_cards_for_email,
+                    changed_cards=changes["cards_changed"],
                 )
 
                 console.print("[green]✓[/green] Email notification sent")

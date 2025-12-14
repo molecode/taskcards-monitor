@@ -88,11 +88,11 @@ cp email-config.example.yaml email-config.yaml
 2. Edit `email-config.yaml` with your SMTP settings and recipient emails:
 ```yaml
 smtp:
-  host: smtp.gmail.com
+  host: <smtp-server>
   port: 587
   use_tls: true
-  username: your-email@gmail.com
-  password: your-app-password
+  username: <your-username>
+  password: <your-password>
 
 email:
   from: your-email@gmail.com
@@ -109,22 +109,11 @@ email:
 uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
 ```
 
-### Gmail Setup
-
-For Gmail users:
-1. Enable 2-factor authentication on your Google account
-2. Generate an [app-specific password](https://support.google.com/accounts/answer/185833)
-3. Use the app password in your email-config.yaml
-
 ### Features
 
-- Beautiful HTML email with styled change summaries
-- Board name displayed prominently in subject and email body
 - Customizable subject line with Jinja2 template variables
 - Shows added, removed, and changed cards
-- Includes card titles and descriptions
 - Only sends emails when changes are detected (not on first run)
-- Links to GitHub repository and issue tracker in footer
 ```
 
 ## State Files
