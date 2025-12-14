@@ -180,12 +180,24 @@ EMAIL_TEMPLATE = """
                 <div class="card-title">{{ card.new_title or card.title }}</div>
                 {% if card.title_changed %}
                 <div class="change-detail">
-                    Title: "{{ card.old_title }}" → "{{ card.new_title }}"
+                    <strong>Title:</strong><br>
+                    <span style="color: #e74c3c;">❌ {{ card.old_title }}</span><br>
+                    <span style="color: #27ae60;">✅ {{ card.new_title }}</span>
                 </div>
                 {% endif %}
                 {% if card.description_changed %}
-                <div class="change-detail">
-                    Description changed
+                <div class="change-detail" style="margin-top: 8px;">
+                    <strong>Description:</strong><br>
+                    {% if card.old_description %}
+                    <span style="color: #e74c3c;">❌ {{ card.old_description }}</span><br>
+                    {% else %}
+                    <span style="color: #999; font-style: italic;">❌ (empty)</span><br>
+                    {% endif %}
+                    {% if card.new_description %}
+                    <span style="color: #27ae60;">✅ {{ card.new_description }}</span>
+                    {% else %}
+                    <span style="color: #999; font-style: italic;">✅ (empty)</span>
+                    {% endif %}
                 </div>
                 {% endif %}
             </li>

@@ -112,6 +112,8 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
                         "title": card["new_title"],
                         "old_title": card["old_title"],
                         "new_title": card["new_title"],
+                        "old_description": card["old_description"],
+                        "new_description": card["new_description"],
                         "title_changed": card["old_title"] != card["new_title"],
                         "description_changed": card["old_description"] != card["new_description"],
                     }
