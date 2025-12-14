@@ -13,7 +13,7 @@ from .display import (
     display_inspect_results,
     display_state,
 )
-from .email_notifier import EmailConfig, EmailNotifier
+from .email_notifier import EmailNotifier
 from .fetcher import TaskCardsFetcher
 from .monitor import BoardMonitor, BoardState
 
@@ -49,11 +49,10 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
     email_notifier = None
     if email_config:
         try:
-            email_config_obj = EmailConfig(email_config)
-            email_notifier = EmailNotifier(email_config_obj)
+            email_notifier = EmailNotifier(email_config)
             if verbose:
                 console.print(
-                    f"[dim]Email notifications will be sent to: {', '.join(email_config_obj.to_emails)}[/dim]"
+                    f"[dim]Email notifications will be sent to: {', '.join(email_notifier.config.to_emails)}[/dim]"
                 )
         except Exception as e:
             console.print(f"[bold red]Error loading email config:[/bold red] {str(e)}")

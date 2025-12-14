@@ -51,13 +51,14 @@ class EmailConfig:
 class EmailNotifier:
     """Send email notifications about board changes."""
 
-    def __init__(self, config: EmailConfig):
+    def __init__(self, config_path: Path | str):
         """Initialize email notifier with configuration.
 
         Args:
-            config: EmailConfig instance with SMTP and email settings
+            config_path: Path to the YAML configuration file
         """
-        self.config = config
+        # Load email configuration
+        self.config = EmailConfig(config_path)
 
         # Load email template from file
         template_path = Path(__file__).parent / "email_template.html"
