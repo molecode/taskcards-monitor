@@ -10,7 +10,7 @@ import yaml
 from jinja2 import Template
 
 
-class _EmailConfig:
+class EmailConfig:
     """Email configuration from YAML file."""
 
     def __init__(self, config_path: Path | str):
@@ -58,7 +58,7 @@ class EmailNotifier:
             config_path: Path to the YAML configuration file
         """
         # Load email configuration
-        self.config = _EmailConfig(config_path)
+        self.config = EmailConfig(config_path)
 
         # Load email template from file
         template_path = Path(__file__).parent / "email_template.html"
