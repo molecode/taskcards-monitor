@@ -147,8 +147,6 @@ EMAIL_TEMPLATE = """
     <h1>📋 {{ board_name }}</h1>
 
     <div class="board-info">
-        <strong>Board ID:</strong> {{ board_id }}<br>
-        <strong>Board Name:</strong> {{ board_name }}<br>
         <strong>Checked at:</strong> {{ timestamp }}
     </div>
 
@@ -163,22 +161,6 @@ EMAIL_TEMPLATE = """
         <ul class="card-list">
             {% for card in added_cards %}
             <li class="card-item added">
-                <div class="card-title">{{ card.title }}</div>
-                {% if card.description %}
-                <div class="card-description">{{ card.description }}</div>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-    {% if removed_cards %}
-    <div class="changes-section">
-        <h2>❌ Removed Cards ({{ removed_cards|length }})</h2>
-        <ul class="card-list">
-            {% for card in removed_cards %}
-            <li class="card-item removed">
                 <div class="card-title">{{ card.title }}</div>
                 {% if card.description %}
                 <div class="card-description">{{ card.description }}</div>
@@ -205,6 +187,22 @@ EMAIL_TEMPLATE = """
                 <div class="change-detail">
                     Description changed
                 </div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if removed_cards %}
+    <div class="changes-section">
+        <h2>❌ Removed Cards ({{ removed_cards|length }})</h2>
+        <ul class="card-list">
+            {% for card in removed_cards %}
+            <li class="card-item removed">
+                <div class="card-title">{{ card.title }}</div>
+                {% if card.description %}
+                <div class="card-description">{{ card.description }}</div>
                 {% endif %}
             </li>
             {% endfor %}
