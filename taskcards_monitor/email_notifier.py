@@ -10,7 +10,7 @@ import yaml
 from jinja2 import Template
 
 
-class EmailConfig:
+class _EmailConfig:
     """Email configuration from YAML file."""
 
     def __init__(self, config_path: Path | str):
@@ -58,38 +58,13 @@ class EmailNotifier:
             config_path: Path to the YAML configuration file
         """
         # Load email configuration
-        self.config = EmailConfig(config_path)
+        self.config = _EmailConfig(config_path)
 
         # Load email template from file
         template_path = Path(__file__).parent / "email_template.html"
         with open(template_path) as f:
             template_content = f.read()
         self.template = Template(template_content)
-
-    @staticmethod
-    def _prepare_changed_cards(changed_cards: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Transform changed cards data for email template.
-
-        Args:
-            changed_cards: List of changed cards from monitor
-
-        Returns:
-            List of changed cards with title_changed and description_changed flags
-        """
-        prepared_cards = []
-        for card in changed_cards:
-            card_info = {
-                "id": card["id"],
-                "title": card["new_title"],
-                "old_title": card["old_title"],
-                "new_title": card["new_title"],
-                "old_description": card["old_description"],
-                "new_description": card["new_description"],
-                "title_changed": card["old_title"] != card["new_title"],
-                "description_changed": card["old_description"] != card["new_description"],
-            }
-            prepared_cards.append(card_info)
-        return prepared_cards
 
     def notify_changes(
         self,
@@ -150,9 +125,6 @@ class EmailNotifier:
             removed_cards: List of removed cards
             changed_cards: List of changed cards
         """
-        # Prepare changed cards for template
-        prepared_changed_cards = self._prepare_changed_cards(changed_cards)
-
         # Prepare template context
         context = {
             "board_id": board_id,
@@ -160,7 +132,7 @@ class EmailNotifier:
             "timestamp": timestamp,
             "added_cards": added_cards,
             "removed_cards": removed_cards,
-            "changed_cards": prepared_changed_cards,
+            "changed_cards": changed_cards,
             "added_count": len(added_cards),
             "removed_count": len(removed_cards),
             "changed_count": len(changed_cards),

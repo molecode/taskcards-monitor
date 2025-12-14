@@ -125,15 +125,15 @@
         <ul class="card-list">
             {% for card in changed_cards %}
             <li class="card-item changed">
-                <div class="card-title">{{ card.new_title or card.title }}</div>
-                {% if card.title_changed %}
+                <div class="card-title">{{ card.new_title }}</div>
+                {% if card.old_title != card.new_title %}
                 <div class="change-detail">
                     <strong>Title:</strong><br>
                     <span style="color: #e74c3c;">❌ {{ card.old_title }}</span><br>
                     <span style="color: #27ae60;">✅ {{ card.new_title }}</span>
                 </div>
                 {% endif %}
-                {% if card.description_changed %}
+                {% if card.old_description != card.new_description %}
                 <div class="change-detail" style="margin-top: 8px;">
                     <strong>Description:</strong><br>
                     {% if card.old_description %}

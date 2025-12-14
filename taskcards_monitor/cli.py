@@ -45,19 +45,6 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
         if email_config:
             console.print(f"[dim]Email notifications enabled: {email_config}[/dim]")
 
-    # Initialize email notifier if config provided
-    email_notifier = None
-    if email_config:
-        try:
-            email_notifier = EmailNotifier(email_config)
-            if verbose:
-                console.print(
-                    f"[dim]Email notifications will be sent to: {', '.join(email_notifier.config.to_emails)}[/dim]"
-                )
-        except Exception as e:
-            console.print(f"[bold red]Error loading email config:[/bold red] {str(e)}")
-            raise click.Abort() from e
-
     # Initialize monitor
     monitor = BoardMonitor(board_id)
 
@@ -95,12 +82,13 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
     display_changes(changes)
 
     # Send email notification if configured
-    if email_notifier:
+    if email_config:
         try:
             if verbose:
-                console.print("[dim]Checking if email notification should be sent...[/dim]")
+                console.print("[dim]Sending email notification...[/dim]")
 
-            email_sent = email_notifier.notify_changes(
+            notifier = EmailNotifier(email_config)
+            email_sent = notifier.notify_changes(
                 board_id=board_id,
                 board_name=current_state.board_name,
                 timestamp=current_state.timestamp,
