@@ -68,6 +68,29 @@ class BoardState:
                 return lst
         return None
 
+    def get_card_column_name(self, card_id: str) -> str | None:
+        """Get the column (list) name for a card.
+
+        Args:
+            card_id: The card ID
+
+        Returns:
+            Column name or None if not found
+        """
+        card = self.get_card(card_id)
+        if not card:
+            return None
+
+        list_id = card.get("listId")
+        if not list_id:
+            return None
+
+        list_data = self.get_list(list_id)
+        if not list_data:
+            return None
+
+        return list_data.get("title")
+
     def to_dict(self) -> dict[str, Any]:
         """Convert board state to dictionary for serialization."""
         return {
@@ -168,6 +191,7 @@ class BoardMonitor:
                 "id": card_id,
                 "title": (card := current_cards[card_id]).get("title", ""),
                 "description": card.get("description", ""),
+                "column": current.get_card_column_name(card_id),
             }
             for card_id in added_ids
         ]
@@ -178,6 +202,7 @@ class BoardMonitor:
                 "id": card_id,
                 "title": (card := previous_cards[card_id]).get("title", ""),
                 "description": card.get("description", ""),
+                "column": previous.get_card_column_name(card_id),
             }
             for card_id in removed_ids
         ]
@@ -190,13 +215,18 @@ class BoardMonitor:
             curr_title, curr_desc = curr.get("title", ""), curr.get("description", "")
             prev_title, prev_desc = prev.get("title", ""), prev.get("description", "")
 
-            if curr_title != prev_title or curr_desc != prev_desc:
+            curr_column = current.get_card_column_name(card_id)
+            prev_column = previous.get_card_column_name(card_id)
+
+            if curr_title != prev_title or curr_desc != prev_desc or curr_column != prev_column:
                 return {
                     "id": card_id,
                     "old_title": prev_title,
                     "new_title": curr_title,
                     "old_description": prev_desc,
                     "new_description": curr_desc,
+                    "old_column": prev_column,
+                    "new_column": curr_column,
                 }
             return None
 
