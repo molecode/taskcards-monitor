@@ -81,7 +81,11 @@ class BoardState:
         if not card:
             return None
 
-        list_id = card.get("listId")
+        kanban_position = card.get("kanbanPosition")
+        if not kanban_position:
+            return None
+
+        list_id = kanban_position.get("listId")
         if not list_id:
             return None
 
@@ -89,7 +93,7 @@ class BoardState:
         if not list_data:
             return None
 
-        return list_data.get("title")
+        return list_data.get("name")
 
     def to_dict(self) -> dict[str, Any]:
         """Convert board state to dictionary for serialization."""
