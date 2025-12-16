@@ -153,10 +153,10 @@
                 {% endif %}
                 {% if card.old_column != card.new_column %}
                 <div class="change-detail" style="margin-top: 8px;">
-                    <strong>Column:</strong> {{ card.old_column or "(unknown)" }} → {{ card.new_column or "(unknown)" }}
+                    📍 <strong>Column:</strong> {{ card.old_column or "(unknown)" }} → {{ card.new_column or "(unknown)" }}
                 </div>
                 {% elif card.new_column %}
-                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.new_column }}</strong></div>
+                <div class="change-detail" style="margin-top: 8px;">📍 <strong>Column:</strong> {{ card.new_column }}</div>
                 {% endif %}
             </li>
             {% endfor %}
