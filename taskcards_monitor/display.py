@@ -70,12 +70,14 @@ def display_changes(changes: dict) -> None:
             "Cards Added",
             "bold green",
             [
-                {"name": "Title", "style": "green"},
-                {"name": "Description", "style": "green dim", "width": 50, "overflow": "fold"},
+                {"name": "Title", "style": "green", "width": 30, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 20},
+                {"name": "Description", "style": "green dim", "width": 40, "overflow": "fold"},
             ],
             [
                 (
                     card.get("title", ""),
+                    card.get("column") or "[dim]<unknown>[/dim]",
                     card.get("description") or "[dim]<empty>[/dim]",
                 )
                 for card in changes["cards_added"]
@@ -90,12 +92,14 @@ def display_changes(changes: dict) -> None:
             "Cards Removed",
             "bold red",
             [
-                {"name": "Title", "style": "red"},
-                {"name": "Description", "style": "red dim", "width": 50, "overflow": "fold"},
+                {"name": "Title", "style": "red", "width": 30, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 20},
+                {"name": "Description", "style": "red dim", "width": 40, "overflow": "fold"},
             ],
             [
                 (
                     card.get("title", ""),
+                    card.get("column") or "[dim]<unknown>[/dim]",
                     card.get("description") or "[dim]<empty>[/dim]",
                 )
                 for card in changes["cards_removed"]
@@ -113,25 +117,35 @@ def display_changes(changes: dict) -> None:
             new_title = card.get("new_title", "")
             old_description = card.get("old_description", "")
             new_description = card.get("new_description", "")
+            old_column = card.get("old_column", "")
+            new_column = card.get("new_column", "")
 
             title_changed = old_title != new_title
             desc_changed = old_description != new_description
+            column_changed = old_column != new_column
 
-            if title_changed and desc_changed:
-                change_type = "Title & Description"
-            elif title_changed:
-                change_type = "Title"
-            else:
-                change_type = "Description"
+            # Build change type string
+            changes_list = []
+            if title_changed:
+                changes_list.append("Title")
+            if desc_changed:
+                changes_list.append("Description")
+            if column_changed:
+                changes_list.append("Column")
+
+            change_type = " & ".join(changes_list) if changes_list else "Unknown"
 
             old_desc = old_description or "[dim]<empty>[/dim]"
             new_desc = new_description or "[dim]<empty>[/dim]"
+            old_col = old_column or "[dim]<unknown>[/dim]"
+            new_col = new_column or "[dim]<unknown>[/dim]"
 
             rows.append(
                 (
                     change_type,
                     old_title if title_changed else "[dim]unchanged[/dim]",
                     new_title if title_changed else "[dim]unchanged[/dim]",
+                    old_col if column_changed else new_col,
                     old_desc if desc_changed else "[dim]unchanged[/dim]",
                     new_desc if desc_changed else "[dim]unchanged[/dim]",
                 )
@@ -141,11 +155,12 @@ def display_changes(changes: dict) -> None:
             "Cards Changed",
             "bold yellow",
             [
-                {"name": "Changed", "style": "yellow", "width": 15},
-                {"name": "Old Title", "style": "dim", "width": 25, "overflow": "fold"},
-                {"name": "New Title", "style": "yellow", "width": 25, "overflow": "fold"},
-                {"name": "Old Description", "style": "dim", "width": 30, "overflow": "fold"},
-                {"name": "New Description", "style": "yellow", "width": 30, "overflow": "fold"},
+                {"name": "Changed", "style": "yellow", "width": 18},
+                {"name": "Old Title", "style": "dim", "width": 20, "overflow": "fold"},
+                {"name": "New Title", "style": "yellow", "width": 20, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 15},
+                {"name": "Old Desc", "style": "dim", "width": 25, "overflow": "fold"},
+                {"name": "New Desc", "style": "yellow", "width": 25, "overflow": "fold"},
             ],
             rows,
         )
