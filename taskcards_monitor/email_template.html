@@ -110,11 +110,11 @@
             {% for card in added_cards %}
             <li class="card-item added">
                 <div class="card-title">{{ card.title }}</div>
-                {% if card.column %}
-                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
-                {% endif %}
                 {% if card.description %}
                 <div class="card-description">{{ card.description }}</div>
+                {% endif %}
+                {% if card.column %}
+                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
             </li>
             {% endfor %}
@@ -129,17 +129,8 @@
             {% for card in changed_cards %}
             <li class="card-item changed">
                 <div class="card-title">{{ card.new_title }}</div>
-                {% if card.old_column != card.new_column %}
-                <div class="change-detail">
-                    <strong>Column:</strong><br>
-                    <span style="color: #e74c3c;">❌ {{ card.old_column or "(unknown)" }}</span><br>
-                    <span style="color: #27ae60;">✅ {{ card.new_column or "(unknown)" }}</span>
-                </div>
-                {% elif card.new_column %}
-                <div class="change-detail">📍 Column: <strong>{{ card.new_column }}</strong></div>
-                {% endif %}
                 {% if card.old_title != card.new_title %}
-                <div class="change-detail" style="margin-top: 8px;">
+                <div class="change-detail">
                     <strong>Title:</strong><br>
                     <span style="color: #e74c3c;">❌ {{ card.old_title }}</span><br>
                     <span style="color: #27ae60;">✅ {{ card.new_title }}</span>
@@ -160,6 +151,13 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                {% if card.old_column != card.new_column %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    📍 Column changed: <strong>{{ card.old_column or "(unknown)" }}</strong> → <strong>{{ card.new_column or "(unknown)" }}</strong>
+                </div>
+                {% elif card.new_column %}
+                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.new_column }}</strong></div>
+                {% endif %}
             </li>
             {% endfor %}
         </ul>
@@ -173,11 +171,11 @@
             {% for card in removed_cards %}
             <li class="card-item removed">
                 <div class="card-title">{{ card.title }}</div>
-                {% if card.column %}
-                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
-                {% endif %}
                 {% if card.description %}
                 <div class="card-description">{{ card.description }}</div>
+                {% endif %}
+                {% if card.column %}
+                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
             </li>
             {% endfor %}
