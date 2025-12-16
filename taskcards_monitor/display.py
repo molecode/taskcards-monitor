@@ -140,6 +140,12 @@ def display_changes(changes: dict) -> None:
             old_col = old_column or "[dim]<unknown>[/dim]"
             new_col = new_column or "[dim]<unknown>[/dim]"
 
+            # Format column display
+            if column_changed:
+                column_display = f"{old_col} → {new_col}"
+            else:
+                column_display = new_col
+
             rows.append(
                 (
                     change_type,
@@ -147,7 +153,7 @@ def display_changes(changes: dict) -> None:
                     new_title if title_changed else "[dim]unchanged[/dim]",
                     old_desc if desc_changed else "[dim]unchanged[/dim]",
                     new_desc if desc_changed else "[dim]unchanged[/dim]",
-                    old_col if column_changed else new_col,
+                    column_display,
                 )
             )
 
