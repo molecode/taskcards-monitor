@@ -71,14 +71,14 @@ def display_changes(changes: dict) -> None:
             "bold green",
             [
                 {"name": "Title", "style": "green", "width": 30, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 20},
                 {"name": "Description", "style": "green dim", "width": 40, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 20},
             ],
             [
                 (
                     card.get("title", ""),
-                    card.get("column") or "[dim]<unknown>[/dim]",
                     card.get("description") or "[dim]<empty>[/dim]",
+                    card.get("column") or "[dim]<unknown>[/dim]",
                 )
                 for card in changes["cards_added"]
             ],
@@ -93,14 +93,14 @@ def display_changes(changes: dict) -> None:
             "bold red",
             [
                 {"name": "Title", "style": "red", "width": 30, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 20},
                 {"name": "Description", "style": "red dim", "width": 40, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 20},
             ],
             [
                 (
                     card.get("title", ""),
-                    card.get("column") or "[dim]<unknown>[/dim]",
                     card.get("description") or "[dim]<empty>[/dim]",
+                    card.get("column") or "[dim]<unknown>[/dim]",
                 )
                 for card in changes["cards_removed"]
             ],
@@ -145,9 +145,9 @@ def display_changes(changes: dict) -> None:
                     change_type,
                     old_title if title_changed else "[dim]unchanged[/dim]",
                     new_title if title_changed else "[dim]unchanged[/dim]",
-                    old_col if column_changed else new_col,
                     old_desc if desc_changed else "[dim]unchanged[/dim]",
                     new_desc if desc_changed else "[dim]unchanged[/dim]",
+                    old_col if column_changed else new_col,
                 )
             )
 
@@ -158,9 +158,9 @@ def display_changes(changes: dict) -> None:
                 {"name": "Changed", "style": "yellow", "width": 18},
                 {"name": "Old Title", "style": "dim", "width": 20, "overflow": "fold"},
                 {"name": "New Title", "style": "yellow", "width": 20, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 15},
                 {"name": "Old Desc", "style": "dim", "width": 25, "overflow": "fold"},
                 {"name": "New Desc", "style": "yellow", "width": 25, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 15},
             ],
             rows,
         )
