@@ -1,7 +1,22 @@
 version: 2
 updates:
+  # Monitor Python dependencies
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"
     open-pull-requests-limit: 10
+
+  # Monitor GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  # Monitor Docker base image
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

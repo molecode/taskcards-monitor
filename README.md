@@ -13,6 +13,23 @@
 
 ## Installation
 
+### Using Docker (Recommended for Production)
+
+```bash
+# Pull the image
+docker pull ghcr.io/molecode/taskcards-monitor:latest
+
+# Run a check
+docker run --rm \
+  -v ~/.cache/taskcards-monitor:/app/.cache/taskcards-monitor \
+  ghcr.io/molecode/taskcards-monitor:latest \
+  check BOARD_ID --token VIEW_TOKEN
+```
+
+See [Docker Usage Guide](docs/DOCKER.md) for detailed setup with cron jobs.
+
+### Local Development
+
 ```bash
 # Install dependencies
 uv sync
