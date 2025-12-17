@@ -227,14 +227,11 @@ class BoardMonitor:
             curr_column = current.get_card_column_name(card_id)
             prev_column = previous.get_card_column_name(card_id)
 
-            # Compare link
-            link_changed = curr_link != prev_link
-
             if (
                 curr_title != prev_title
                 or curr_desc != prev_desc
+                or curr_link != prev_link
                 or curr_column != prev_column
-                or link_changed
             ):
                 return {
                     "id": card_id,
