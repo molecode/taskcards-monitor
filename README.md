@@ -6,7 +6,8 @@
 
 - Monitor both **public and private** TaskCards boards
 - Detect added/removed cards
-- Detect card title and description changes
+- Detect card title, description, and link changes
+- Track card movements between columns
 - Persistent state tracking with full board data
 - **Email notifications** when changes are detected (optional)
 
@@ -109,12 +110,28 @@ email:
 uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
 ```
 
-### Features
+### Email Features
 
 - Customizable subject line with Jinja2 template variables
-- Shows added, removed, and changed cards
+- Shows added, removed, and changed cards with full details
+- Displays card links as clickable hyperlinks
+- Shows column information for each card
 - Only sends emails when changes are detected (not on first run)
 ```
+
+## What Changes Are Tracked?
+
+taskcards-monitor detects the following changes:
+
+- **Cards Added**: New cards appear on the board
+- **Cards Removed**: Existing cards are deleted
+- **Card Changes**:
+  - Title changes
+  - Description changes
+  - Link changes (URL added, removed, or modified)
+  - Column movements (cards moved between lists)
+
+All changes are displayed in the terminal and included in email notifications if configured.
 
 ## State Files
 
