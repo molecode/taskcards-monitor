@@ -28,6 +28,7 @@ class TaskCardsFetcher:
           id
           title
           description
+          link
           created
           modified
           kanbanPosition {

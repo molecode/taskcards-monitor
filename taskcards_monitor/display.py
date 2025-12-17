@@ -35,6 +35,13 @@ def create_table(title: str, header_style: str, columns: list[dict], rows: list)
     return table
 
 
+def _format_link(link: str) -> str:
+    """Format link for display in terminal."""
+    if not link:
+        return "[dim]<none>[/dim]"
+    return link
+
+
 def display_changes(changes: dict) -> None:
     """Display detected changes with beautiful formatting."""
 
@@ -70,14 +77,16 @@ def display_changes(changes: dict) -> None:
             "Cards Added",
             "bold green",
             [
-                {"name": "Title", "style": "green", "width": 30, "overflow": "fold"},
-                {"name": "Description", "style": "green dim", "width": 40, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 20},
+                {"name": "Title", "style": "green", "width": 25, "overflow": "fold"},
+                {"name": "Description", "style": "green dim", "width": 30, "overflow": "fold"},
+                {"name": "Link", "style": "blue", "width": 30, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 15},
             ],
             [
                 (
                     card.get("title", ""),
                     card.get("description") or "[dim]<empty>[/dim]",
+                    _format_link(card.get("link", "")),
                     card.get("column") or "[dim]<unknown>[/dim]",
                 )
                 for card in changes["cards_added"]
@@ -92,14 +101,16 @@ def display_changes(changes: dict) -> None:
             "Cards Removed",
             "bold red",
             [
-                {"name": "Title", "style": "red", "width": 30, "overflow": "fold"},
-                {"name": "Description", "style": "red dim", "width": 40, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 20},
+                {"name": "Title", "style": "red", "width": 25, "overflow": "fold"},
+                {"name": "Description", "style": "red dim", "width": 30, "overflow": "fold"},
+                {"name": "Link", "style": "blue", "width": 30, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 15},
             ],
             [
                 (
                     card.get("title", ""),
                     card.get("description") or "[dim]<empty>[/dim]",
+                    _format_link(card.get("link", "")),
                     card.get("column") or "[dim]<unknown>[/dim]",
                 )
                 for card in changes["cards_removed"]
@@ -117,11 +128,14 @@ def display_changes(changes: dict) -> None:
             new_title = card.get("new_title", "")
             old_description = card.get("old_description", "")
             new_description = card.get("new_description", "")
+            old_link = card.get("old_link", "")
+            new_link = card.get("new_link", "")
             old_column = card.get("old_column", "")
             new_column = card.get("new_column", "")
 
             title_changed = old_title != new_title
             desc_changed = old_description != new_description
+            link_changed = old_link != new_link
             column_changed = old_column != new_column
 
             # Build change type string
@@ -130,6 +144,8 @@ def display_changes(changes: dict) -> None:
                 changes_list.append("Title")
             if desc_changed:
                 changes_list.append("Description")
+            if link_changed:
+                changes_list.append("Link")
             if column_changed:
                 changes_list.append("Column")
 
@@ -147,6 +163,8 @@ def display_changes(changes: dict) -> None:
                     new_title if title_changed else "[dim]unchanged[/dim]",
                     old_desc if desc_changed else "[dim]unchanged[/dim]",
                     new_desc if desc_changed else "[dim]unchanged[/dim]",
+                    _format_link(old_link) if link_changed else "[dim]unchanged[/dim]",
+                    _format_link(new_link) if link_changed else "[dim]unchanged[/dim]",
                     old_col if column_changed else "[dim]unchanged[/dim]",
                     new_col,
                 )
@@ -156,13 +174,15 @@ def display_changes(changes: dict) -> None:
             "Cards Changed",
             "bold yellow",
             [
-                {"name": "Changed", "style": "yellow", "width": 18},
-                {"name": "Old Title", "style": "dim", "width": 20, "overflow": "fold"},
-                {"name": "New Title", "style": "yellow", "width": 20, "overflow": "fold"},
-                {"name": "Old Desc", "style": "dim", "width": 20, "overflow": "fold"},
-                {"name": "New Desc", "style": "yellow", "width": 20, "overflow": "fold"},
-                {"name": "Old Column", "style": "dim", "width": 15},
-                {"name": "New Column", "style": "cyan", "width": 15},
+                {"name": "Changed", "style": "yellow", "width": 15},
+                {"name": "Old Title", "style": "dim", "width": 15, "overflow": "fold"},
+                {"name": "New Title", "style": "yellow", "width": 15, "overflow": "fold"},
+                {"name": "Old Desc", "style": "dim", "width": 15, "overflow": "fold"},
+                {"name": "New Desc", "style": "yellow", "width": 15, "overflow": "fold"},
+                {"name": "Old Link", "style": "dim", "width": 20, "overflow": "fold"},
+                {"name": "New Link", "style": "blue", "width": 20, "overflow": "fold"},
+                {"name": "Old Column", "style": "dim", "width": 12},
+                {"name": "New Column", "style": "cyan", "width": 12},
             ],
             rows,
         )
@@ -214,6 +234,7 @@ def _display_board_details(state: BoardState) -> None:
         for card in full_cards:
             title = card.get("title", "[dim]<untitled>[/dim]")
             description = card.get("description", "") or "[dim]<empty>[/dim]"
+            link = card.get("link", "")
             kanban_pos = card.get("kanbanPosition", {})
             list_id = kanban_pos.get("listId") if kanban_pos else None
             column_name = (
@@ -221,20 +242,21 @@ def _display_board_details(state: BoardState) -> None:
                 if list_id
                 else "[dim]<no column>[/dim]"
             )
-            rows.append((title, column_name, description))
+            rows.append((title, column_name, description, _format_link(link)))
 
         table = create_table(
             "Cards",
             "bold magenta",
             [
-                {"name": "Card Title", "style": "magenta", "width": 40, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 30},
+                {"name": "Card Title", "style": "magenta", "width": 30, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 20},
                 {
                     "name": "Description",
                     "style": "magenta dim",
-                    "width": 50,
+                    "width": 35,
                     "overflow": "fold",
                 },
+                {"name": "Link", "style": "blue", "width": 35, "overflow": "fold"},
             ],
             rows,
         )
