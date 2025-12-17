@@ -15,11 +15,11 @@ class BoardState:
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
     @property
-    def cards(self) -> dict[str, dict[str, str]]:
+    def cards(self) -> dict[str, dict[str, Any]]:
         """
         Get cards in simplified format for display compatibility.
 
-        Returns dict of {card_id: {"title": str, "description": str}}
+        Returns dict of {card_id: {"title": str, "description": str, "link": str}}
         This maintains backward compatibility with existing display code.
         """
         cards_dict = {}
@@ -31,6 +31,7 @@ class BoardState:
                 cards_dict[card_id] = {
                     "title": card.get("title", ""),
                     "description": card.get("description", ""),
+                    "link": card.get("link", ""),
                 }
 
         return cards_dict
@@ -195,6 +196,7 @@ class BoardMonitor:
                 "id": card_id,
                 "title": (card := current_cards[card_id]).get("title", ""),
                 "description": card.get("description", ""),
+                "link": card.get("link", ""),
                 "column": current.get_card_column_name(card_id),
             }
             for card_id in added_ids
@@ -206,6 +208,7 @@ class BoardMonitor:
                 "id": card_id,
                 "title": (card := previous_cards[card_id]).get("title", ""),
                 "description": card.get("description", ""),
+                "link": card.get("link", ""),
                 "column": previous.get_card_column_name(card_id),
             }
             for card_id in removed_ids
@@ -218,17 +221,26 @@ class BoardMonitor:
 
             curr_title, curr_desc = curr.get("title", ""), curr.get("description", "")
             prev_title, prev_desc = prev.get("title", ""), prev.get("description", "")
+            curr_link = curr.get("link", "")
+            prev_link = prev.get("link", "")
 
             curr_column = current.get_card_column_name(card_id)
             prev_column = previous.get_card_column_name(card_id)
 
-            if curr_title != prev_title or curr_desc != prev_desc or curr_column != prev_column:
+            if (
+                curr_title != prev_title
+                or curr_desc != prev_desc
+                or curr_link != prev_link
+                or curr_column != prev_column
+            ):
                 return {
                     "id": card_id,
                     "old_title": prev_title,
                     "new_title": curr_title,
                     "old_description": prev_desc,
                     "new_description": curr_desc,
+                    "old_link": prev_link,
+                    "new_link": curr_link,
                     "old_column": prev_column,
                     "new_column": curr_column,
                 }

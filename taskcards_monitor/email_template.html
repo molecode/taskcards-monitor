@@ -113,6 +113,11 @@
                 {% if card.description %}
                 <div class="card-description">{{ card.description }}</div>
                 {% endif %}
+                {% if card.link %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    🔗 Link: <a href="{{ card.link }}" style="color: #3498db;">{{ card.link }}</a>
+                </div>
+                {% endif %}
                 {% if card.column %}
                 <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
@@ -151,6 +156,21 @@
                     {% endif %}
                 </div>
                 {% endif %}
+                {% if card.old_link != card.new_link %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    <strong>🔗 Link:</strong><br>
+                    {% if card.old_link %}
+                    <span style="color: #e74c3c;">❌ <a href="{{ card.old_link }}" style="color: #e74c3c;">{{ card.old_link }}</a></span><br>
+                    {% else %}
+                    <span style="color: #999; font-style: italic;">❌ (none)</span><br>
+                    {% endif %}
+                    {% if card.new_link %}
+                    <span style="color: #27ae60;">✅ <a href="{{ card.new_link }}" style="color: #27ae60;">{{ card.new_link }}</a></span>
+                    {% else %}
+                    <span style="color: #999; font-style: italic;">✅ (none)</span>
+                    {% endif %}
+                </div>
+                {% endif %}
                 {% if card.old_column != card.new_column %}
                 <div class="change-detail" style="margin-top: 8px;">
                     📍 Column changed: <strong>{{ card.old_column or "(unknown)" }}</strong> → <strong>{{ card.new_column or "(unknown)" }}</strong>
@@ -173,6 +193,11 @@
                 <div class="card-title">{{ card.title }}</div>
                 {% if card.description %}
                 <div class="card-description">{{ card.description }}</div>
+                {% endif %}
+                {% if card.link %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    🔗 Link: <a href="{{ card.link }}" style="color: #3498db;">{{ card.link }}</a>
+                </div>
                 {% endif %}
                 {% if card.column %}
                 <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
