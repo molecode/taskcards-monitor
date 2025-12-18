@@ -13,6 +13,40 @@
 
 ## Installation
 
+### Using Docker (Recommended for Production)
+
+**Option 1: Docker Compose (Simplest)**
+
+```bash
+# 1. Create required directories and .env file
+mkdir -p cache config
+cp .env.example .env
+
+# 2. Edit .env with your board details
+# BOARD_ID=your-board-id
+# VIEW_TOKEN=your-view-token
+
+# 3. Run the monitor
+docker compose run --rm taskcards-monitor
+```
+
+**Option 2: Docker Run (Direct)**
+
+```bash
+# Pull the image
+docker pull ghcr.io/molecode/taskcards-monitor:latest
+
+# Run a check
+docker run --rm \
+  -v ~/.cache/taskcards-monitor:/app/.cache/taskcards-monitor \
+  ghcr.io/molecode/taskcards-monitor:latest \
+  check BOARD_ID --token VIEW_TOKEN
+```
+
+See [Docker Usage Guide](docs/DOCKER.md) for detailed setup including cron jobs and email notifications.
+
+### Local Development
+
 ```bash
 # Install dependencies
 uv sync

@@ -1,0 +1,43 @@
+services:
+  taskcards-monitor:
+    image: ghcr.io/molecode/taskcards-monitor:latest
+    # Or use a specific version:
+    # image: ghcr.io/molecode/taskcards-monitor:0.2.0
+
+    volumes:
+      - ./cache:/app/.cache/taskcards-monitor
+      - ./config:/app/config:ro
+
+    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /app/config/email-config.yaml
+
+    environment:
+      - BOARD_ID=${BOARD_ID}
+      - VIEW_TOKEN=${VIEW_TOKEN}
+
+# Setup:
+#
+# 1. Create required directories:
+#    mkdir -p cache config
+#
+# 2. Create .env file with your board configuration:
+#    BOARD_ID=your-board-id
+#    VIEW_TOKEN=your-view-token
+#
+# 3. (Optional) Create config/email-config.yaml for email notifications (see README)
+#
+# Usage:
+#
+# Run the monitor (reads from .env):
+#    docker compose run --rm taskcards-monitor
+#
+# Or override environment variables:
+#    BOARD_ID=other-board-id VIEW_TOKEN=token docker compose run --rm taskcards-monitor
+#
+# Show saved state:
+#    docker compose run --rm taskcards-monitor show ${BOARD_ID}
+#
+# List all monitored boards:
+#    docker compose run --rm taskcards-monitor list
+#
+# Run as a cron job (add to crontab):
+#    0 */3 * * * cd /path/to/repo && docker compose run --rm taskcards-monitor >> cron.log 2>&1
