@@ -1,5 +1,5 @@
 # Use official uv Alpine image with Python (pinned to specific version)
-FROM ghcr.io/astral-sh/uv:0.5.11-python3.12-alpine@sha256:f0a183f564bc5a386453ae78cf498843f14474dd88e2e6a9e4bdbc2ec3d7cbd0
+FROM ghcr.io/astral-sh/uv:0.9.18-python3.12-alpine@sha256:ba8fc3d26628bc566eda4ed792608c42da7093e5b8f941d6260098919a74346c
 
 # Set working directory
 WORKDIR /app
