@@ -4,48 +4,40 @@ services:
     # Or use a specific version:
     # image: ghcr.io/molecode/taskcards-monitor:0.2.0
 
-    # Mount the cache directory to persist board state between runs
     volumes:
-      - taskcards-data:/home/taskcards/.cache/taskcards-monitor
-      # Uncomment to enable email notifications (see README for setup):
-      # - ./email-config.yaml:/home/taskcards/email-config.yaml:ro
+      - ./cache:/app/.cache/taskcards-monitor
+      - ./config:/config:ro
 
-    # Example: Check a board for changes
-    # Override this command based on your needs
-    command: ["check", "YOUR_BOARD_ID"]
+    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /config/email-config.yaml
 
-    # For private boards, you can pass the view token via environment variable
-    # and reference it in the command
     environment:
-      - TASKCARDS_TOKEN=${TASKCARDS_TOKEN:-}
+      - BOARD_ID=${BOARD_ID}
+      - VIEW_TOKEN=${VIEW_TOKEN}
 
-    # Examples:
-    # Private board with token:
-    # command: ["check", "YOUR_BOARD_ID", "--token", "${TASKCARDS_TOKEN}"]
-    #
-    # With email notifications (requires email-config.yaml, see README):
-    # command: ["check", "YOUR_BOARD_ID", "--email-config", "/home/taskcards/email-config.yaml"]
-
-volumes:
-  taskcards-data:
-    driver: local
-
-# Example usage:
+# Setup:
 #
-# 1. Check a public board:
-#    docker compose run --rm taskcards-monitor check YOUR_BOARD_ID
+# 1. Create required directories:
+#    mkdir -p cache config
 #
-# 2. Check a private board with token:
-#    TASKCARDS_TOKEN=your-token docker compose run --rm taskcards-monitor check YOUR_BOARD_ID --token "$TASKCARDS_TOKEN"
+# 2. Create .env file with your board configuration:
+#    BOARD_ID=your-board-id
+#    VIEW_TOKEN=your-view-token
 #
-# 3. With email notifications (create email-config.yaml first, see README):
-#    docker compose run --rm taskcards-monitor check YOUR_BOARD_ID --email-config /home/taskcards/email-config.yaml
+# 3. (Optional) Create config/email-config.yaml for email notifications (see README)
 #
-# 4. Show saved state:
-#    docker compose run --rm taskcards-monitor show YOUR_BOARD_ID
+# Usage:
 #
-# 5. List all monitored boards:
+# Run the monitor (reads from .env):
+#    docker compose run --rm taskcards-monitor
+#
+# Or override environment variables:
+#    BOARD_ID=other-board-id VIEW_TOKEN=token docker compose run --rm taskcards-monitor
+#
+# Show saved state:
+#    docker compose run --rm taskcards-monitor show ${BOARD_ID}
+#
+# List all monitored boards:
 #    docker compose run --rm taskcards-monitor list
 #
-# 6. Run as a cron job (add to crontab):
-#    0 */3 * * * cd /path/to/repo && docker compose run --rm taskcards-monitor check YOUR_BOARD_ID
+# Run as a cron job (add to crontab):
+#    0 */3 * * * cd /path/to/repo && docker compose run --rm taskcards-monitor >> cron.log 2>&1
