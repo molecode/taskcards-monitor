@@ -218,9 +218,18 @@ docker run --rm \
 
 ## Image Tags
 
-- `latest` - Latest release from main branch
-- `1.0.0`, `1.0`, `1` - Specific version tags
-- `main` - Latest commit from main branch (may be unstable)
+Docker images are built automatically when a new release is published on GitHub.
+
+- `latest` - Latest stable release
+- `0.2.0` - Specific version tag (matches release version)
+- `0.2` - Major.minor version tag
+- `0` - Major version tag
+
+**Example**: When you publish release `v0.2.0` (or `0.2.0`), the following tags are created:
+- `ghcr.io/molecode/taskcards-monitor:latest`
+- `ghcr.io/molecode/taskcards-monitor:0.2.0`
+- `ghcr.io/molecode/taskcards-monitor:0.2`
+- `ghcr.io/molecode/taskcards-monitor:0`
 
 ## Building Locally
 
