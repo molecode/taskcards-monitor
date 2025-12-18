@@ -1,0 +1,55 @@
+services:
+  taskcards-monitor:
+    image: ghcr.io/molecode/taskcards-monitor:latest
+    # Or use a specific version:
+    # image: ghcr.io/molecode/taskcards-monitor:0.2.0
+
+    # Mount the cache directory to persist board state between runs
+    volumes:
+      - taskcards-data:/home/taskcards/.cache/taskcards-monitor
+
+    # Example: Check a board for changes
+    # Override this command based on your needs
+    command: ["check", "YOUR_BOARD_ID"]
+
+    # For private boards, you can pass the view token via environment variable
+    # and reference it in the command
+    environment:
+      - TASKCARDS_TOKEN=${TASKCARDS_TOKEN:-}
+
+    # Uncomment to use the token in the command
+    # command: ["check", "YOUR_BOARD_ID", "--token", "${TASKCARDS_TOKEN}"]
+
+    # Optional: Run in non-headless mode for debugging (requires X11)
+    # command: ["inspect", "YOUR_BOARD_ID", "--no-headless"]
+
+    # Optional: Email notifications
+    # environment:
+    #   - SMTP_HOST=smtp.gmail.com
+    #   - SMTP_PORT=587
+    #   - SMTP_USER=your-email@gmail.com
+    #   - SMTP_PASSWORD=your-app-password
+    #   - EMAIL_FROM=your-email@gmail.com
+    #   - EMAIL_TO=recipient@example.com
+    # command: ["check", "YOUR_BOARD_ID", "--email"]
+
+volumes:
+  taskcards-data:
+    driver: local
+
+# Example usage:
+#
+# 1. Check a public board:
+#    docker compose run --rm taskcards-monitor check YOUR_BOARD_ID
+#
+# 2. Check a private board with token:
+#    TASKCARDS_TOKEN=your-token docker compose run --rm taskcards-monitor check YOUR_BOARD_ID --token "$TASKCARDS_TOKEN"
+#
+# 3. Show saved state:
+#    docker compose run --rm taskcards-monitor show YOUR_BOARD_ID
+#
+# 4. List all monitored boards:
+#    docker compose run --rm taskcards-monitor list
+#
+# 5. Run as a cron job (add to crontab):
+#    0 */3 * * * cd /path/to/repo && docker compose run --rm taskcards-monitor check YOUR_BOARD_ID
