@@ -29,7 +29,7 @@ mkdir -p ~/taskcards-monitor/{config,cache}
 
 ### 2. Create Email Configuration (Optional)
 
-Create `~/taskcards-monitor/config/email-config.yaml`:
+Create `~/taskcards-monitor/config/email-config.yaml`, for example:
 
 ```yaml
 smtp:

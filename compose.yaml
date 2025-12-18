@@ -6,9 +6,9 @@ services:
 
     volumes:
       - ./cache:/app/.cache/taskcards-monitor
-      - ./config:/config:ro
+      - ./config:/app/config:ro
 
-    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /config/email-config.yaml
+    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /app/config/email-config.yaml
 
     environment:
       - BOARD_ID=${BOARD_ID}

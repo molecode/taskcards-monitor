@@ -212,3 +212,5 @@ CLAUDE.md
 
 # Email configuration (contains credentials)
 email-config.yaml
+cache
+config
