@@ -69,11 +69,11 @@ docker pull "${IMAGE}" > /dev/null 2>&1
 # Run the monitor
 docker run --rm \
   -v "${CACHE_DIR}:/app/.cache/taskcards-monitor" \
-  -v "${CONFIG_DIR}:/config:ro" \
+  -v "${CONFIG_DIR}:/app/config:ro" \
   "${IMAGE}" \
   check "${BOARD_ID}" \
   --token "${VIEW_TOKEN}" \
-  --email-config /config/email-config.yaml
+  --email-config /app/config/email-config.yaml
 
 # Exit with the same status as the container
 exit $?
@@ -119,8 +119,8 @@ services:
     image: ghcr.io/molecode/taskcards-monitor:latest
     volumes:
       - ./cache:/app/.cache/taskcards-monitor
-      - ./config:/config:ro
-    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /config/email-config.yaml
+      - ./config:/app/config:ro
+    command: check ${BOARD_ID} --token ${VIEW_TOKEN} --email-config /app/config/email-config.yaml
     environment:
       - BOARD_ID=${BOARD_ID}
       - VIEW_TOKEN=${VIEW_TOKEN}
@@ -168,11 +168,11 @@ for board in "${BOARDS[@]}"; do
 
   docker run --rm \
     -v "${CACHE_DIR}:/app/.cache/taskcards-monitor" \
-    -v "${CONFIG_DIR}:/config:ro" \
+    -v "${CONFIG_DIR}:/app/config:ro" \
     "${IMAGE}" \
     check "${BOARD_ID}" \
     --token "${TOKEN}" \
-    --email-config /config/email-config.yaml
+    --email-config /app/config/email-config.yaml
 
   echo "---"
 done
@@ -211,7 +211,7 @@ docker run --rm \
   - Required for change detection to work
   - Should be persistent
 
-- **Config Volume** (`-v ~/config:/config:ro`):
+- **Config Volume** (`-v ~/config:/app/config:ro`):
   - Provides email configuration
   - Read-only (`:ro`) for security
   - Optional if not using email notifications
