@@ -1,6 +1,9 @@
 name: Build and Push Docker Image
 
 on:
+  push:
+    branches:
+      - feature/docker-container
   release:
     types: [published]
   workflow_dispatch:
@@ -33,10 +36,15 @@ jobs:
       - name: Extract version from release
         id: version
         run: |
-          # Get version from release tag (e.g., v0.2.0 or 0.2.0)
-          VERSION="${{ github.event.release.tag_name }}"
-          # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # Get version from release tag (e.g., v0.2.0 or 0.2.0)
+            VERSION="${{ github.event.release.tag_name }}"
+            # Remove 'v' prefix if present
+            VERSION="${VERSION#v}"
+          else
+            # For testing, use a test version
+            VERSION="test-build"
+          fi
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "Building version: ${VERSION}"
 
