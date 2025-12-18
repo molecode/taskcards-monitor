@@ -151,7 +151,6 @@ uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
 - Displays card links as clickable hyperlinks
 - Shows column information for each card
 - Only sends emails when changes are detected (not on first run)
-```
 
 ## What Changes Are Tracked?
 
