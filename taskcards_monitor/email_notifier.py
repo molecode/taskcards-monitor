@@ -3,6 +3,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -136,6 +137,7 @@ class EmailNotifier:
             "added_count": len(added_cards),
             "removed_count": len(removed_cards),
             "changed_count": len(changed_cards),
+            "version": version("taskcards-monitor"),
         }
 
         # Render subject with Jinja2 variables
