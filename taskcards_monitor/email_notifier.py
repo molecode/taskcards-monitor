@@ -153,7 +153,9 @@ class EmailNotifier:
             if self.config.from_name
             else self.config.from_email
         )
-        msg["To"] = ", ".join(self.config.to_emails)
+        # Use Bcc to hide recipients from each other
+        msg["To"] = self.config.from_email
+        msg["Bcc"] = ", ".join(self.config.to_emails)
 
         # Attach HTML content
         html_part = MIMEText(html_content, "html")
