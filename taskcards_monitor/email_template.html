@@ -124,16 +124,11 @@
                 {% if card.attachments %}
                 <div class="change-detail" style="margin-top: 8px;">
                     📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
-                    <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
+                    <ul style="margin: 5px 0 0 20px; padding: 0;">
                         {% for attachment in card.attachments %}
-                        <li style="font-size: 12px; margin: 8px 0; display: flex; align-items: center;">
-                            {% if attachment.mimetype and attachment.mimetype.startswith('image/') %}
-                            <img src="{{ attachment.previewLink or attachment.downloadLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
-                            {% endif %}
-                            <div>
-                                <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
-                                <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
-                            </div>
+                        <li style="font-size: 12px; margin: 4px 0;">
+                            <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
+                            <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                         </li>
                         {% endfor %}
                     </ul>
@@ -202,16 +197,11 @@
                     {% if card.attachments_added %}
                     <div style="margin-top: 5px;">
                         <span style="color: #27ae60;">✅ Added ({{ card.attachments_added|length }}):</span>
-                        <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">
                             {% for attachment in card.attachments_added %}
-                            <li style="font-size: 12px; margin: 8px 0; display: flex; align-items: center;">
-                                {% if attachment.mimetype and attachment.mimetype.startswith('image/') %}
-                                <img src="{{ attachment.previewLink or attachment.downloadLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
-                                {% endif %}
-                                <div>
-                                    <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
-                                    <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
-                                </div>
+                            <li style="font-size: 12px; margin: 4px 0;">
+                                <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
+                                <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                             </li>
                             {% endfor %}
                         </ul>
@@ -220,9 +210,9 @@
                     {% if card.attachments_removed %}
                     <div style="margin-top: 5px;">
                         <span style="color: #e74c3c;">❌ Removed ({{ card.attachments_removed|length }}):</span>
-                        <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">
                             {% for attachment in card.attachments_removed %}
-                            <li style="font-size: 12px; margin: 8px 0;">
+                            <li style="font-size: 12px; margin: 4px 0;">
                                 {{ attachment.filename }}
                                 <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                             </li>
@@ -259,9 +249,9 @@
                 {% if card.attachments %}
                 <div class="change-detail" style="margin-top: 8px;">
                     📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
-                    <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
+                    <ul style="margin: 5px 0 0 20px; padding: 0;">
                         {% for attachment in card.attachments %}
-                        <li style="font-size: 12px; margin: 8px 0;">
+                        <li style="font-size: 12px; margin: 4px 0;">
                             {{ attachment.filename }}
                             <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                         </li>
