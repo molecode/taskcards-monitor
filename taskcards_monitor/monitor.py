@@ -19,7 +19,7 @@ class BoardState:
         """
         Get cards in simplified format for display compatibility.
 
-        Returns dict of {card_id: {"title": str, "description": str, "link": str}}
+        Returns dict of {card_id: {"title": str, "description": str, "link": str, "attachments": list}}
         This maintains backward compatibility with existing display code.
         """
         cards_dict = {}
@@ -32,6 +32,7 @@ class BoardState:
                     "title": card.get("title", ""),
                     "description": card.get("description", ""),
                     "link": card.get("link", ""),
+                    "attachments": card.get("attachments", []),
                 }
 
         return cards_dict
@@ -198,6 +199,7 @@ class BoardMonitor:
                 "description": card.get("description", ""),
                 "link": card.get("link", ""),
                 "column": current.get_card_column_name(card_id),
+                "attachments": card.get("attachments", []),
             }
             for card_id in added_ids
         ]
@@ -210,6 +212,7 @@ class BoardMonitor:
                 "description": card.get("description", ""),
                 "link": card.get("link", ""),
                 "column": previous.get_card_column_name(card_id),
+                "attachments": card.get("attachments", []),
             }
             for card_id in removed_ids
         ]
@@ -223,16 +226,35 @@ class BoardMonitor:
             prev_title, prev_desc = prev.get("title", ""), prev.get("description", "")
             curr_link = curr.get("link", "")
             prev_link = prev.get("link", "")
+            curr_attachments = curr.get("attachments", [])
+            prev_attachments = prev.get("attachments", [])
 
             curr_column = current.get_card_column_name(card_id)
             prev_column = previous.get_card_column_name(card_id)
+
+            # Compare attachments by ID
+            curr_attachment_ids = {att.get("id") for att in curr_attachments}
+            prev_attachment_ids = {att.get("id") for att in prev_attachments}
+            attachments_changed = curr_attachment_ids != prev_attachment_ids
 
             if (
                 curr_title != prev_title
                 or curr_desc != prev_desc
                 or curr_link != prev_link
                 or curr_column != prev_column
+                or attachments_changed
             ):
+                # Find added and removed attachments
+                added_attachment_ids = curr_attachment_ids - prev_attachment_ids
+                removed_attachment_ids = prev_attachment_ids - curr_attachment_ids
+
+                added_attachments = [
+                    att for att in curr_attachments if att.get("id") in added_attachment_ids
+                ]
+                removed_attachments = [
+                    att for att in prev_attachments if att.get("id") in removed_attachment_ids
+                ]
+
                 return {
                     "id": card_id,
                     "old_title": prev_title,
@@ -243,6 +265,8 @@ class BoardMonitor:
                     "new_link": curr_link,
                     "old_column": prev_column,
                     "new_column": curr_column,
+                    "attachments_added": added_attachments,
+                    "attachments_removed": removed_attachments,
                 }
             return None
 

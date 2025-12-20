@@ -8,6 +8,7 @@
 - Detect added/removed cards
 - Detect card title, description, and link changes
 - Track card movements between columns
+- **Track file attachments** (added/removed)
 - Persistent state tracking with full board data
 - **Email notifications** when changes are detected (optional)
 
@@ -149,6 +150,7 @@ uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
 - Customizable subject line with Jinja2 template variables
 - Shows added, removed, and changed cards with full details
 - Displays card links as clickable hyperlinks
+- Shows file attachments with download links and sizes
 - Shows column information for each card
 - Only sends emails when changes are detected (not on first run)
 
@@ -163,6 +165,7 @@ taskcards-monitor detects the following changes:
   - Description changes
   - Link changes (URL added, removed, or modified)
   - Column movements (cards moved between lists)
+  - Attachments added or removed (with filenames and file sizes)
 
 All changes are displayed in the terminal and included in email notifications if configured.
 

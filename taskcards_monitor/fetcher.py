@@ -35,6 +35,14 @@ class TaskCardsFetcher:
             listId
             position
           }
+          attachments {
+            id
+            filename
+            length
+            mimetype
+            downloadLink
+            previewLink
+          }
         }
       }
     }
