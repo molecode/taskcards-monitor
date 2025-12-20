@@ -184,13 +184,6 @@
                     {% endif %}
                 </div>
                 {% endif %}
-                {% if card.old_column != card.new_column %}
-                <div class="change-detail" style="margin-top: 8px;">
-                    📍 Column changed: <strong>{{ card.old_column or "(unknown)" }}</strong> → <strong>{{ card.new_column or "(unknown)" }}</strong>
-                </div>
-                {% elif card.new_column %}
-                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.new_column }}</strong></div>
-                {% endif %}
                 {% if card.attachments_added or card.attachments_removed %}
                 <div class="change-detail" style="margin-top: 8px;">
                     <strong>📎 Attachments changed:</strong>
@@ -221,6 +214,13 @@
                     </div>
                     {% endif %}
                 </div>
+                {% endif %}
+                {% if card.old_column != card.new_column %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    📍 Column changed: <strong>{{ card.old_column or "(unknown)" }}</strong> → <strong>{{ card.new_column or "(unknown)" }}</strong>
+                </div>
+                {% elif card.new_column %}
+                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.new_column }}</strong></div>
                 {% endif %}
             </li>
             {% endfor %}
