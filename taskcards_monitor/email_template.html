@@ -118,9 +118,6 @@
                     🔗 Link: <a href="{{ card.link }}" style="color: #3498db;">{{ card.link }}</a>
                 </div>
                 {% endif %}
-                {% if card.column %}
-                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
-                {% endif %}
                 {% if card.attachments %}
                 <div class="change-detail" style="margin-top: 8px;">
                     📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
@@ -133,6 +130,9 @@
                         {% endfor %}
                     </ul>
                 </div>
+                {% endif %}
+                {% if card.column %}
+                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
             </li>
             {% endfor %}
@@ -243,9 +243,6 @@
                     🔗 Link: <a href="{{ card.link }}" style="color: #3498db;">{{ card.link }}</a>
                 </div>
                 {% endif %}
-                {% if card.column %}
-                <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
-                {% endif %}
                 {% if card.attachments %}
                 <div class="change-detail" style="margin-top: 8px;">
                     📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
@@ -258,6 +255,9 @@
                         {% endfor %}
                     </ul>
                 </div>
+                {% endif %}
+                {% if card.column %}
+                <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
             </li>
             {% endfor %}

@@ -279,6 +279,7 @@ def _display_board_details(state: BoardState) -> None:
             title = card.get("title", "[dim]<untitled>[/dim]")
             description = card.get("description", "") or "[dim]<empty>[/dim]"
             link = card.get("link", "")
+            attachments = card.get("attachments", [])
             kanban_pos = card.get("kanbanPosition", {})
             list_id = kanban_pos.get("listId") if kanban_pos else None
             column_name = (
@@ -286,21 +287,30 @@ def _display_board_details(state: BoardState) -> None:
                 if list_id
                 else "[dim]<no column>[/dim]"
             )
-            rows.append((title, column_name, description, _format_link(link)))
+            rows.append(
+                (
+                    title,
+                    column_name,
+                    description,
+                    _format_link(link),
+                    _format_attachments(attachments),
+                )
+            )
 
         table = create_table(
             "Cards",
             "bold magenta",
             [
-                {"name": "Card Title", "style": "magenta", "width": 30, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 20},
+                {"name": "Card Title", "style": "magenta", "width": 25, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 18},
                 {
                     "name": "Description",
                     "style": "magenta dim",
-                    "width": 35,
+                    "width": 25,
                     "overflow": "fold",
                 },
-                {"name": "Link", "style": "blue", "width": 35, "overflow": "fold"},
+                {"name": "Link", "style": "blue", "width": 25, "overflow": "fold"},
+                {"name": "Attachments", "style": "green", "width": 25, "overflow": "fold"},
             ],
             rows,
         )
