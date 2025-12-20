@@ -96,6 +96,10 @@
 
     <div class="board-info">
         <strong>Checked at:</strong> {{ timestamp }}
+        {% if board_url %}
+        <br>
+        <strong>Board Link:</strong> <a href="{{ board_url }}" style="color: #3498db;">{{ board_url }}</a>
+        {% endif %}
     </div>
 
     <div class="summary">
@@ -273,7 +277,8 @@
         <p>This email was sent by <strong>taskcards-monitor v{{ version }}</strong>, an open source TaskCards monitoring tool.</p>
         <p>
             🔗 <a href="https://github.com/molecode/taskcards-monitor" style="color: #3498db;">GitHub Repository</a> |
-            🐛 <a href="https://github.com/molecode/taskcards-monitor/issues" style="color: #3498db;">Issue Tracker</a>
+            🐛 <a href="https://github.com/molecode/taskcards-monitor/issues" style="color: #3498db;">Issue Tracker</a> |
+            📋 <a href="https://www.taskcards.de" style="color: #3498db;">TaskCards.de</a>
         </p>
         <p style="margin-top: 10px; font-size: 11px;">Board: {{ board_name }} ({{ board_id }})</p>
     </div>

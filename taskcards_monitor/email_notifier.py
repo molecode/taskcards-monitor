@@ -73,6 +73,7 @@ class EmailNotifier:
         board_name: str | None,
         timestamp: str,
         changes: dict[str, Any],
+        token: str | None = None,
     ) -> bool:
         """Send email notification if there are changes (not on first run).
 
@@ -81,6 +82,7 @@ class EmailNotifier:
             board_name: The board name (optional)
             timestamp: Timestamp of the check
             changes: Changes dictionary from BoardMonitor.detect_changes()
+            token: View token for private boards (optional)
 
         Returns:
             True if email was sent, False otherwise
@@ -103,6 +105,7 @@ class EmailNotifier:
             added_cards=changes["cards_added"],
             removed_cards=changes["cards_removed"],
             changed_cards=changes["cards_changed"],
+            token=token,
         )
 
         return True
@@ -115,6 +118,7 @@ class EmailNotifier:
         added_cards: list[dict[str, Any]],
         removed_cards: list[dict[str, Any]],
         changed_cards: list[dict[str, Any]],
+        token: str | None = None,
     ) -> None:
         """Send email notification about board changes.
 
@@ -125,11 +129,18 @@ class EmailNotifier:
             added_cards: List of added cards
             removed_cards: List of removed cards
             changed_cards: List of changed cards
+            token: View token for private boards (optional)
         """
+        # Construct board URL (only for public boards without token)
+        board_url = None
+        if not token:
+            board_url = f"https://www.taskcards.de/#/board/{board_id}/view"
+
         # Prepare template context
         context = {
             "board_id": board_id,
             "board_name": board_name or board_id,
+            "board_url": board_url,
             "timestamp": timestamp,
             "added_cards": added_cards,
             "removed_cards": removed_cards,
