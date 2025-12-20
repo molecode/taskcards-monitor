@@ -1,6 +1,6 @@
 [project]
 name = "taskcards-monitor"
-version = "0.4.0"
+version = "0.5.0"
 description = "Monitor TaskCards boards for changes using GraphQL API"
 requires-python = ">=3.12"
 dependencies = [
