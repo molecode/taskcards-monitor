@@ -127,8 +127,8 @@
                     <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
                         {% for attachment in card.attachments %}
                         <li style="font-size: 12px; margin: 8px 0; display: flex; align-items: center;">
-                            {% if attachment.mimetype and attachment.mimetype.startswith('image/') and attachment.previewLink %}
-                            <img src="{{ attachment.previewLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
+                            {% if attachment.mimetype and attachment.mimetype.startswith('image/') %}
+                            <img src="{{ attachment.previewLink or attachment.downloadLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
                             {% endif %}
                             <div>
                                 <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
@@ -205,8 +205,8 @@
                         <ul style="margin: 5px 0 0 20px; padding: 0; list-style: none;">
                             {% for attachment in card.attachments_added %}
                             <li style="font-size: 12px; margin: 8px 0; display: flex; align-items: center;">
-                                {% if attachment.mimetype and attachment.mimetype.startswith('image/') and attachment.previewLink %}
-                                <img src="{{ attachment.previewLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
+                                {% if attachment.mimetype and attachment.mimetype.startswith('image/') %}
+                                <img src="{{ attachment.previewLink or attachment.downloadLink }}" style="max-width: 60px; max-height: 60px; margin-right: 10px; border-radius: 4px; border: 1px solid #e1e4e8; object-fit: cover;" alt="{{ attachment.filename }}">
                                 {% endif %}
                                 <div>
                                     <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
