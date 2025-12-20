@@ -93,6 +93,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
                 board_name=current_state.board_name,
                 timestamp=current_state.timestamp,
                 changes=changes,
+                token=token,
             )
 
             if email_sent:
