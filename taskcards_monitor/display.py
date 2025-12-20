@@ -42,6 +42,17 @@ def _format_link(link: str) -> str:
     return link
 
 
+def _format_attachments(attachments: list) -> str:
+    """Format attachments for display in terminal."""
+    if not attachments:
+        return "[dim]<none>[/dim]"
+    return (
+        f"{len(attachments)} file(s): "
+        + ", ".join(att.get("filename", "<unknown>") for att in attachments[:3])
+        + (" ..." if len(attachments) > 3 else "")
+    )
+
+
 def display_changes(changes: dict) -> None:
     """Display detected changes with beautiful formatting."""
 
@@ -77,10 +88,11 @@ def display_changes(changes: dict) -> None:
             "Cards Added",
             "bold green",
             [
-                {"name": "Title", "style": "green", "width": 25, "overflow": "fold"},
-                {"name": "Description", "style": "green dim", "width": 30, "overflow": "fold"},
-                {"name": "Link", "style": "blue", "width": 30, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 15},
+                {"name": "Title", "style": "green", "width": 20, "overflow": "fold"},
+                {"name": "Description", "style": "green dim", "width": 25, "overflow": "fold"},
+                {"name": "Link", "style": "blue", "width": 25, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 12},
+                {"name": "Attachments", "style": "magenta", "width": 30, "overflow": "fold"},
             ],
             [
                 (
@@ -88,6 +100,7 @@ def display_changes(changes: dict) -> None:
                     card.get("description") or "[dim]<empty>[/dim]",
                     _format_link(card.get("link", "")),
                     card.get("column") or "[dim]<unknown>[/dim]",
+                    _format_attachments(card.get("attachments", [])),
                 )
                 for card in changes["cards_added"]
             ],
@@ -101,10 +114,11 @@ def display_changes(changes: dict) -> None:
             "Cards Removed",
             "bold red",
             [
-                {"name": "Title", "style": "red", "width": 25, "overflow": "fold"},
-                {"name": "Description", "style": "red dim", "width": 30, "overflow": "fold"},
-                {"name": "Link", "style": "blue", "width": 30, "overflow": "fold"},
-                {"name": "Column", "style": "cyan", "width": 15},
+                {"name": "Title", "style": "red", "width": 20, "overflow": "fold"},
+                {"name": "Description", "style": "red dim", "width": 25, "overflow": "fold"},
+                {"name": "Link", "style": "blue", "width": 25, "overflow": "fold"},
+                {"name": "Column", "style": "cyan", "width": 12},
+                {"name": "Attachments", "style": "magenta", "width": 30, "overflow": "fold"},
             ],
             [
                 (
@@ -112,6 +126,7 @@ def display_changes(changes: dict) -> None:
                     card.get("description") or "[dim]<empty>[/dim]",
                     _format_link(card.get("link", "")),
                     card.get("column") or "[dim]<unknown>[/dim]",
+                    _format_attachments(card.get("attachments", [])),
                 )
                 for card in changes["cards_removed"]
             ],
@@ -132,11 +147,14 @@ def display_changes(changes: dict) -> None:
             new_link = card.get("new_link", "")
             old_column = card.get("old_column", "")
             new_column = card.get("new_column", "")
+            attachments_added = card.get("attachments_added", [])
+            attachments_removed = card.get("attachments_removed", [])
 
             title_changed = old_title != new_title
             desc_changed = old_description != new_description
             link_changed = old_link != new_link
             column_changed = old_column != new_column
+            attachments_changed = bool(attachments_added or attachments_removed)
 
             # Build change type string
             changes_list = []
@@ -148,6 +166,8 @@ def display_changes(changes: dict) -> None:
                 changes_list.append("Link")
             if column_changed:
                 changes_list.append("Column")
+            if attachments_changed:
+                changes_list.append("Attachments")
 
             change_type = " & ".join(changes_list) if changes_list else "Unknown"
 
@@ -155,6 +175,28 @@ def display_changes(changes: dict) -> None:
             new_desc = new_description or "[dim]<empty>[/dim]"
             old_col = old_column or "[dim]<unknown>[/dim]"
             new_col = new_column or "[dim]<unknown>[/dim]"
+
+            # Format attachment changes
+            attachment_change = ""
+            if attachments_added and attachments_removed:
+                attachment_change = (
+                    f"[green]+{len(attachments_added)}[/green] / "
+                    f"[red]-{len(attachments_removed)}[/red]"
+                )
+            elif attachments_added:
+                attachment_change = (
+                    f"[green]+{len(attachments_added)}[/green]: "
+                    + ", ".join(att.get("filename", "<unknown>") for att in attachments_added[:2])
+                    + (" ..." if len(attachments_added) > 2 else "")
+                )
+            elif attachments_removed:
+                attachment_change = (
+                    f"[red]-{len(attachments_removed)}[/red]: "
+                    + ", ".join(att.get("filename", "<unknown>") for att in attachments_removed[:2])
+                    + (" ..." if len(attachments_removed) > 2 else "")
+                )
+            else:
+                attachment_change = "[dim]unchanged[/dim]"
 
             rows.append(
                 (
@@ -167,6 +209,7 @@ def display_changes(changes: dict) -> None:
                     _format_link(new_link) if link_changed else "[dim]unchanged[/dim]",
                     old_col if column_changed else "[dim]unchanged[/dim]",
                     new_col,
+                    attachment_change,
                 )
             )
 
@@ -174,15 +217,16 @@ def display_changes(changes: dict) -> None:
             "Cards Changed",
             "bold yellow",
             [
-                {"name": "Changed", "style": "yellow", "width": 15},
-                {"name": "Old Title", "style": "dim", "width": 15, "overflow": "fold"},
-                {"name": "New Title", "style": "yellow", "width": 15, "overflow": "fold"},
-                {"name": "Old Desc", "style": "dim", "width": 15, "overflow": "fold"},
-                {"name": "New Desc", "style": "yellow", "width": 15, "overflow": "fold"},
-                {"name": "Old Link", "style": "dim", "width": 20, "overflow": "fold"},
-                {"name": "New Link", "style": "blue", "width": 20, "overflow": "fold"},
-                {"name": "Old Column", "style": "dim", "width": 12},
-                {"name": "New Column", "style": "cyan", "width": 12},
+                {"name": "Changed", "style": "yellow", "width": 12},
+                {"name": "Old Title", "style": "dim", "width": 12, "overflow": "fold"},
+                {"name": "New Title", "style": "yellow", "width": 12, "overflow": "fold"},
+                {"name": "Old Desc", "style": "dim", "width": 12, "overflow": "fold"},
+                {"name": "New Desc", "style": "yellow", "width": 12, "overflow": "fold"},
+                {"name": "Old Link", "style": "dim", "width": 15, "overflow": "fold"},
+                {"name": "New Link", "style": "blue", "width": 15, "overflow": "fold"},
+                {"name": "Old Column", "style": "dim", "width": 10},
+                {"name": "New Column", "style": "cyan", "width": 10},
+                {"name": "Attachments", "style": "magenta", "width": 20, "overflow": "fold"},
             ],
             rows,
         )

@@ -121,6 +121,19 @@
                 {% if card.column %}
                 <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
                 {% endif %}
+                {% if card.attachments %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
+                    <ul style="margin: 5px 0 0 20px; padding: 0;">
+                        {% for attachment in card.attachments %}
+                        <li style="font-size: 12px;">
+                            <a href="{{ attachment.downloadLink }}" style="color: #3498db;">{{ attachment.filename }}</a>
+                            ({{ (attachment.length|int / 1024)|round(1) }} KB)
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </li>
             {% endfor %}
         </ul>
@@ -178,6 +191,37 @@
                 {% elif card.new_column %}
                 <div class="change-detail" style="margin-top: 8px;">📍 Column: <strong>{{ card.new_column }}</strong></div>
                 {% endif %}
+                {% if card.attachments_added or card.attachments_removed %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    <strong>📎 Attachments changed:</strong>
+                    {% if card.attachments_added %}
+                    <div style="margin-top: 5px;">
+                        <span style="color: #27ae60;">✅ Added ({{ card.attachments_added|length }}):</span>
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">
+                            {% for attachment in card.attachments_added %}
+                            <li style="font-size: 12px;">
+                                <a href="{{ attachment.downloadLink }}" style="color: #3498db;">{{ attachment.filename }}</a>
+                                ({{ (attachment.length|int / 1024)|round(1) }} KB)
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% if card.attachments_removed %}
+                    <div style="margin-top: 5px;">
+                        <span style="color: #e74c3c;">❌ Removed ({{ card.attachments_removed|length }}):</span>
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">
+                            {% for attachment in card.attachments_removed %}
+                            <li style="font-size: 12px;">
+                                {{ attachment.filename }}
+                                ({{ (attachment.length|int / 1024)|round(1) }} KB)
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </li>
             {% endfor %}
         </ul>
@@ -201,6 +245,19 @@
                 {% endif %}
                 {% if card.column %}
                 <div class="change-detail">📍 Column: <strong>{{ card.column }}</strong></div>
+                {% endif %}
+                {% if card.attachments %}
+                <div class="change-detail" style="margin-top: 8px;">
+                    📎 Attachments: <strong>{{ card.attachments|length }} file(s)</strong>
+                    <ul style="margin: 5px 0 0 20px; padding: 0;">
+                        {% for attachment in card.attachments %}
+                        <li style="font-size: 12px;">
+                            {{ attachment.filename }}
+                            ({{ (attachment.length|int / 1024)|round(1) }} KB)
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% endif %}
             </li>
             {% endfor %}

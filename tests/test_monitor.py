@@ -336,3 +336,79 @@ class TestBoardMonitor:
         assert len(changes["cards_added"]) == 1  # card3
         assert len(changes["cards_removed"]) == 1  # card2
         assert len(changes["cards_changed"]) == 1  # card1
+
+    def test_detect_attachments_added(self):
+        """Test detecting when attachments are added to a card."""
+        prev_data = {
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "attachments": [],
+                }
+            ],
+        }
+
+        curr_data = {
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "attachments": [
+                        {
+                            "id": "att1",
+                            "filename": "document.pdf",
+                            "length": "12345",
+                        }
+                    ],
+                }
+            ],
+        }
+
+        previous = BoardState(prev_data)
+        current = BoardState(curr_data)
+        monitor = BoardMonitor("board123")
+        changes = monitor.detect_changes(current, previous)
+
+        assert len(changes["cards_changed"]) == 1
+        assert len(changes["cards_changed"][0]["attachments_added"]) == 1
+        assert changes["cards_changed"][0]["attachments_added"][0]["filename"] == "document.pdf"
+        assert len(changes["cards_changed"][0]["attachments_removed"]) == 0
+
+    def test_detect_attachments_removed(self):
+        """Test detecting when attachments are removed from a card."""
+        prev_data = {
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "attachments": [
+                        {
+                            "id": "att1",
+                            "filename": "document.pdf",
+                            "length": "12345",
+                        }
+                    ],
+                }
+            ],
+        }
+
+        curr_data = {
+            "cards": [
+                {
+                    "id": "card1",
+                    "title": "Task 1",
+                    "attachments": [],
+                }
+            ],
+        }
+
+        previous = BoardState(prev_data)
+        current = BoardState(curr_data)
+        monitor = BoardMonitor("board123")
+        changes = monitor.detect_changes(current, previous)
+
+        assert len(changes["cards_changed"]) == 1
+        assert len(changes["cards_changed"][0]["attachments_removed"]) == 1
+        assert changes["cards_changed"][0]["attachments_removed"][0]["filename"] == "document.pdf"
+        assert len(changes["cards_changed"][0]["attachments_added"]) == 0
