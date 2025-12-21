@@ -2,6 +2,10 @@
 name = "taskcards-monitor"
 version = "0.5.1"
 description = "Monitor TaskCards boards for changes using GraphQL API"
+readme = "README.md"
+authors = [
+    { name = "Timo Schäpe", email = "info@timoschaepe.de" }
+]
 requires-python = ">=3.12"
 dependencies = [
     "click==8.3.1",
@@ -15,13 +19,17 @@ dependencies = [
 taskcards-monitor = "taskcards_monitor.cli:main"
 
 [dependency-groups]
-dev = [
-    "ruff==0.14.10",
-    "pre-commit==4.5.0",
+test = [
     "pytest==9.0.2",
     "pytest-mock==3.15.1",
     "pytest-cov==7.0.0",
 ]
+dev = [
+    { include-group = "test" },
+    "ruff==0.14.9",
+    "pre-commit==4.5.0",
+]
+
 
 [build-system]
 requires = ["hatchling"]
