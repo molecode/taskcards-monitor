@@ -1,6 +1,30 @@
 # taskcards-monitor
 
- Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the GraphQL API.
+Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the GraphQL API.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Using Docker (Recommended for Production)](#using-docker-recommended-for-production)
+  - [Local Development](#local-development)
+- [Quick Start](#quick-start)
+  - [Monitor a Public Board](#monitor-a-public-board)
+  - [Monitor a Private Board](#monitor-a-private-board)
+- [Usage](#usage)
+  - [Commands](#commands)
+  - [Options](#options)
+  - [Examples](#examples)
+- [Email Notifications](#email-notifications)
+  - [Setup](#setup)
+  - [Email Features](#email-features)
+- [What Changes Are Tracked?](#what-changes-are-tracked)
+- [State Files](#state-files)
+- [Development](#development)
+- [Project Structure](#project-structure)
+- [AI-Generated Code](#ai-generated-code)
+- [Future Enhancements](#future-enhancements)
+- [Contributing](#contributing)
 
 ## Features
 
@@ -204,6 +228,16 @@ taskcards_monitor/
 ├── fetcher.py        # HTTP client for fetching board data via GraphQL API
 └── monitor.py        # Change detection logic and state management
 ```
+
+## AI-Generated Code
+
+This project was developed mainly with the assistance of [Claude Code](https://claude.ai/code).
+
+While AI assisted in generating the code, all output has been reviewed and tested to ensure:
+- **Security**: Proper handling of credentials and tokens
+- **Functionality**: Reliable change detection across different board configurations
+- **Best Practices**: Adherence to Python development standards
+- **Documentation**: Comprehensive usage examples and setup instructions
 
 ## Future Enhancements
 
