@@ -1,6 +1,6 @@
 [project]
 name = "taskcards-monitor"
-version = "0.5.1"
+version = "0.6"
 description = "Monitor TaskCards boards for changes using GraphQL API"
 readme = "README.md"
 authors = [
@@ -13,6 +13,7 @@ dependencies = [
     "rich==14.2.0",
     "pyyaml==6.0.3",
     "jinja2==3.1.6",
+    "peewee>=3.17.0",
 ]
 
 [project.scripts]

@@ -3,8 +3,9 @@
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from typing import Any
+
+from .models import Attachment, Board, Card, Change, List
 
 
 @dataclass
@@ -97,69 +98,391 @@ class BoardState:
 
         return list_data.get("name")
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert board state to dictionary for serialization."""
-        return {
-            "timestamp": self.timestamp,
-            "board": self.data,
-        }
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "BoardState":
-        """Create BoardState from serialized dictionary."""
-        state = object.__new__(cls)
-        state.timestamp = data["timestamp"]
-        state.data = data["board"]
-        return state
-
 
 class BoardMonitor:
-    """Monitors a TaskCards board for changes."""
+    """Monitors a TaskCards board for changes using SQLite database."""
 
-    def __init__(self, board_id: str, state_dir: Path | None = None):
+    def __init__(self, board_id: str):
         """
         Initialize the board monitor.
 
         Args:
             board_id: The board ID to monitor
-            state_dir: Directory to store state files (defaults to ~/.cache/taskcards-monitor/)
         """
         self.board_id = board_id
 
-        if state_dir is None:
-            state_dir = Path.home() / ".cache" / "taskcards-monitor"
-
-        self.state_dir = Path(state_dir)
-        self.state_dir.mkdir(parents=True, exist_ok=True)
-
-        self.state_file = self.state_dir / f"{board_id}.json"
-
     def get_previous_state(self) -> BoardState | None:
         """
-        Load the previously saved state.
+        Load the previously saved state from database.
 
         Returns:
             BoardState if exists, None otherwise
         """
-        if not self.state_file.exists():
+        # Get board
+        board = Board.get_or_none(Board.board_id == self.board_id)
+        if not board:
             return None
 
-        try:
-            with open(self.state_file) as f:
-                data = json.load(f)
-                return BoardState.from_dict(data)
-        except (json.JSONDecodeError, KeyError, FileNotFoundError):
-            return None
+        # Get current cards (valid_to IS NULL)
+        current_cards = (
+            Card.select()
+            .where((Card.board == board) & (Card.valid_to.is_null()))
+            .order_by(Card.card_id)
+        )
+
+        # Get current lists
+        current_lists = (
+            List.select()
+            .where((List.board == board) & (List.valid_to.is_null()))
+            .order_by(List.position)
+        )
+
+        # Get current attachments
+        current_attachments = Attachment.select().where(
+            (Attachment.board == board) & (Attachment.removed_at.is_null())
+        )
+
+        # Build attachments map: card_id -> list of attachments
+        attachments_map = {}
+        for att in current_attachments:
+            if att.card_id not in attachments_map:
+                attachments_map[att.card_id] = []
+            attachments_map[att.card_id].append(
+                {
+                    "id": att.attachment_id,
+                    "filename": att.filename,
+                    "downloadLink": att.url,
+                    "mimetype": att.mime_type,
+                    "length": att.length,
+                }
+            )
+
+        # Reconstruct board data structure
+        cards_list = []
+        for card in current_cards:
+            card_data = {
+                "id": card.card_id,
+                "title": card.title,
+                "description": card.description,
+                "link": card.link,
+                "attachments": attachments_map.get(card.card_id, []),
+            }
+
+            # Add kanbanPosition if we have list info
+            if card.list_id:
+                card_data["kanbanPosition"] = {"listId": card.list_id}
+
+            cards_list.append(card_data)
+
+        lists_list = [
+            {
+                "id": lst.list_id,
+                "name": lst.name,
+                "position": lst.position,
+                "color": lst.color,
+            }
+            for lst in current_lists
+        ]
+
+        data = {
+            "id": board.board_id,
+            "name": board.name,
+            "description": board.description,
+            "cards": cards_list,
+            "lists": lists_list,
+        }
+
+        return BoardState(data=data, timestamp=board.last_checked.isoformat())
 
     def save_state(self, state: BoardState) -> None:
         """
-        Save the current board state.
+        Save the current board state to database.
+
+        This method:
+        1. Updates or creates the board record
+        2. Compares with previous state to create historical records
+        3. Updates temporal tables (cards, lists, attachments)
+        4. Records changes in the changes table
 
         Args:
             state: BoardState to save
         """
-        with open(self.state_file, "w") as f:
-            json.dump(state.to_dict(), f, indent=2)
+        now = datetime.now()
+        board_id = state.data.get("id")
+
+        # Get or create board
+        board, created = Board.get_or_create(
+            board_id=board_id,
+            defaults={
+                "name": state.board_name,
+                "description": state.board_description,
+                "first_checked": now,
+                "last_checked": now,
+            },
+        )
+
+        if not created:
+            board.name = state.board_name
+            board.description = state.board_description
+            board.last_checked = now
+            board.save()
+
+        # Get previous state for comparison
+        previous = self.get_previous_state() if not created else None
+
+        # Save lists
+        self._save_lists(board, state.lists, now)
+
+        # Save cards and detect changes
+        changes = self._save_cards(board, state, previous, now)
+
+        # Save attachments
+        self._save_attachments(board, state, now)
+
+        # Record changes if not first run
+        if previous is not None and changes:
+            self._record_changes(board, changes, now)
+
+    def _save_lists(self, board: Board, lists: list[dict[str, Any]], timestamp: datetime) -> None:
+        """Save lists to database with temporal tracking."""
+        # Get current lists
+        current_lists = {
+            lst.list_id: lst
+            for lst in List.select().where((List.board == board) & (List.valid_to.is_null()))
+        }
+
+        new_list_ids = {lst.get("id") for lst in lists if lst.get("id")}
+
+        # Mark removed lists as invalid
+        for list_id, lst in current_lists.items():
+            if list_id not in new_list_ids:
+                lst.valid_to = timestamp
+                lst.save()
+
+        # Add or update lists
+        for lst_data in lists:
+            list_id = lst_data.get("id")
+            if not list_id:
+                continue
+
+            name = lst_data.get("name", "")
+            position = lst_data.get("position")
+            color = lst_data.get("color")
+
+            existing = current_lists.get(list_id)
+
+            # Check if anything changed
+            if existing:
+                if (
+                    existing.name == name
+                    and existing.position == position
+                    and existing.color == color
+                ):
+                    continue  # No change
+
+                # Mark old as invalid
+                existing.valid_to = timestamp
+                existing.save()
+
+            # Create new version
+            List.create(
+                board=board,
+                list_id=list_id,
+                name=name,
+                position=position,
+                color=color,
+                valid_from=timestamp,
+                valid_to=None,
+            )
+
+    def _save_cards(
+        self,
+        board: Board,
+        state: BoardState,
+        previous: BoardState | None,
+        timestamp: datetime,
+    ) -> dict[str, Any]:
+        """Save cards to database and return detected changes."""
+        # Get current cards
+        current_cards = {
+            card.card_id: card
+            for card in Card.select().where((Card.board == board) & (Card.valid_to.is_null()))
+        }
+
+        new_cards_data = {card.get("id"): card for card in state.data.get("cards", [])}
+        new_card_ids = set(new_cards_data.keys())
+        current_card_ids = set(current_cards.keys())
+
+        changes = {
+            "cards_added": [],
+            "cards_removed": [],
+            "cards_changed": [],
+        }
+
+        # Detect removed cards
+        for card_id in current_card_ids - new_card_ids:
+            card = current_cards[card_id]
+            card.valid_to = timestamp
+            card.save()
+
+            if previous:
+                changes["cards_removed"].append(
+                    {
+                        "id": card_id,
+                        "title": card.title,
+                        "description": card.description,
+                        "link": card.link,
+                        "column": card.list_name,
+                        "attachments": [],
+                    }
+                )
+
+        # Detect added and modified cards
+        for card_id in new_card_ids:
+            card_data = new_cards_data[card_id]
+            title = card_data.get("title", "")
+            description = card_data.get("description", "")
+            link = card_data.get("link", "")
+
+            kanban_pos = card_data.get("kanbanPosition", {})
+            list_id = kanban_pos.get("listId")
+            list_name = state.get_card_column_name(card_id)
+
+            existing = current_cards.get(card_id)
+
+            if card_id in current_card_ids:
+                # Check if anything changed
+                if (
+                    existing.title == title
+                    and existing.description == description
+                    and existing.link == link
+                    and existing.list_id == list_id
+                ):
+                    continue  # No change
+
+                # Card modified
+                if previous:
+                    changes["cards_changed"].append(
+                        {
+                            "id": card_id,
+                            "old_title": existing.title,
+                            "new_title": title,
+                            "old_description": existing.description,
+                            "new_description": description,
+                            "old_link": existing.link,
+                            "new_link": link,
+                            "old_column": existing.list_name,
+                            "new_column": list_name,
+                            "attachments_added": [],
+                            "attachments_removed": [],
+                        }
+                    )
+
+                # Mark old as invalid
+                existing.valid_to = timestamp
+                existing.save()
+            else:
+                # Card added
+                if previous:
+                    changes["cards_added"].append(
+                        {
+                            "id": card_id,
+                            "title": title,
+                            "description": description,
+                            "link": link,
+                            "column": list_name,
+                            "attachments": [],
+                        }
+                    )
+
+            # Create new version
+            Card.create(
+                board=board,
+                card_id=card_id,
+                title=title,
+                description=description,
+                link=link,
+                list_id=list_id,
+                list_name=list_name,
+                valid_from=timestamp,
+                valid_to=None,
+            )
+
+        return changes
+
+    def _save_attachments(self, board: Board, state: BoardState, timestamp: datetime) -> None:
+        """Save attachments to database with temporal tracking."""
+        # Get current attachments
+        current_attachments = {}
+        for att in Attachment.select().where(
+            (Attachment.board == board) & (Attachment.removed_at.is_null())
+        ):
+            key = (att.card_id, att.attachment_id)
+            current_attachments[key] = att
+
+        # Build map of new attachments
+        new_attachments = {}
+        for card in state.data.get("cards", []):
+            card_id = card.get("id")
+            for att_data in card.get("attachments", []):
+                att_id = att_data.get("id")
+                if card_id and att_id:
+                    key = (card_id, att_id)
+                    new_attachments[key] = att_data
+
+        # Mark removed attachments
+        for key, att in current_attachments.items():
+            if key not in new_attachments:
+                att.removed_at = timestamp
+                att.save()
+
+        # Add new attachments
+        for key, att_data in new_attachments.items():
+            if key not in current_attachments:
+                card_id, att_id = key
+                Attachment.create(
+                    board=board,
+                    card_id=card_id,
+                    attachment_id=att_id,
+                    filename=att_data.get("filename"),
+                    url=att_data.get("downloadLink"),
+                    mime_type=att_data.get("mimetype"),
+                    length=att_data.get("length"),
+                    added_at=timestamp,
+                    removed_at=None,
+                )
+
+    def _record_changes(self, board: Board, changes: dict[str, Any], timestamp: datetime) -> None:
+        """Record changes in the changes table."""
+        # Record added cards
+        for card in changes.get("cards_added", []):
+            Change.create(
+                board=board,
+                timestamp=timestamp,
+                change_type="card_added",
+                card_id=card["id"],
+                details=json.dumps(card),
+            )
+
+        # Record removed cards
+        for card in changes.get("cards_removed", []):
+            Change.create(
+                board=board,
+                timestamp=timestamp,
+                change_type="card_removed",
+                card_id=card["id"],
+                details=json.dumps(card),
+            )
+
+        # Record modified cards
+        for card in changes.get("cards_changed", []):
+            Change.create(
+                board=board,
+                timestamp=timestamp,
+                change_type="card_modified",
+                card_id=card["id"],
+                details=json.dumps(card),
+            )
 
     def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
         """
