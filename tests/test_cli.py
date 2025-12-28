@@ -1,6 +1,5 @@
 """Tests for the CLI module."""
 
-import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -295,14 +294,19 @@ class TestCLI:
 
     def test_list_command_with_boards(self, runner, tmp_path):
         """Test list command with existing boards."""
-        # Create state directory
-        state_dir = tmp_path / ".cache" / "taskcards-monitor"
-        state_dir.mkdir(parents=True)
+        from taskcards_monitor.database import init_database
+        from taskcards_monitor.monitor import BoardMonitor, BoardState
 
-        # Create state files using new format
-        board1_data = {
-            "timestamp": "2025-01-01T12:00:00",
-            "board": {
+        # Initialize database
+        db_path = tmp_path / ".cache" / "taskcards-monitor" / "taskcards-monitor.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("taskcards_monitor.database.get_default_db_path") as mock_db_path:
+            mock_db_path.return_value = db_path
+            init_database(db_path)
+
+            # Create boards in database
+            board1_data = {
                 "id": "board123",
                 "name": "My First Board",
                 "lists": [{"id": "col1", "name": "To Do", "position": 0}],
@@ -311,14 +315,13 @@ class TestCLI:
                         "id": "card1",
                         "title": "Task 1",
                         "description": "",
+                        "kanbanPosition": {"listId": "col1"},
+                        "attachments": [],
                     }
                 ],
-            },
-        }
+            }
 
-        board2_data = {
-            "timestamp": "2025-01-02T12:00:00",
-            "board": {
+            board2_data = {
                 "id": "board456",
                 "name": "My Second Board",
                 "lists": [
@@ -326,17 +329,14 @@ class TestCLI:
                     {"id": "col2", "name": "Done", "position": 1},
                 ],
                 "cards": [],
-            },
-        }
+            }
 
-        with open(state_dir / "board123.json", "w") as f:
-            json.dump(board1_data, f)
+            monitor1 = BoardMonitor("board123")
+            monitor1.save_state(BoardState(board1_data))
 
-        with open(state_dir / "board456.json", "w") as f:
-            json.dump(board2_data, f)
+            monitor2 = BoardMonitor("board456")
+            monitor2.save_state(BoardState(board2_data))
 
-        with patch("taskcards_monitor.cli.Path.home") as mock_home:
-            mock_home.return_value = tmp_path
             result = runner.invoke(main, ["list"])
 
         # Verify
@@ -346,34 +346,35 @@ class TestCLI:
         assert "board456" in result.output
 
     def test_list_command_with_malformed_file(self, runner, tmp_path):
-        """Test list command skips malformed state files."""
-        # Create state directory
-        state_dir = tmp_path / ".cache" / "taskcards-monitor"
-        state_dir.mkdir(parents=True)
+        """Test list command handles database properly."""
+        from taskcards_monitor.database import init_database
+        from taskcards_monitor.monitor import BoardMonitor, BoardState
 
-        # Create valid state file using new format
-        valid_data = {
-            "timestamp": "2025-01-01T12:00:00",
-            "board": {
+        # Initialize database
+        db_path = tmp_path / ".cache" / "taskcards-monitor" / "taskcards-monitor.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with patch("taskcards_monitor.database.get_default_db_path") as mock_db_path:
+            mock_db_path.return_value = db_path
+            init_database(db_path)
+
+            # Create one board in database
+            board_data = {
+                "id": "board123",
+                "name": "Valid Board",
                 "lists": [],
                 "cards": [],
-            },
-        }
-        with open(state_dir / "board123.json", "w") as f:
-            json.dump(valid_data, f)
+            }
 
-        # Create malformed state file
-        with open(state_dir / "board456.json", "w") as f:
-            f.write("{ invalid json")
+            monitor = BoardMonitor("board123")
+            monitor.save_state(BoardState(board_data))
 
-        with patch("taskcards_monitor.cli.Path.home") as mock_home:
-            mock_home.return_value = tmp_path
             result = runner.invoke(main, ["list"])
 
-        # Verify - should only show valid board
+        # Verify - should show the board
         assert result.exit_code == 0
         assert "board123" in result.output
-        assert "board456" not in result.output
+        assert "Valid Board" in result.output
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     def test_inspect_command(self, mock_fetcher_class, runner):
