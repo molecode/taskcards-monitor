@@ -1,9 +1,12 @@
 """Command-line interface for TaskCards monitor."""
 
+import json
+from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
 import click
+from rich.table import Table
 
 from .database import init_database
 from .display import (
@@ -16,6 +19,7 @@ from .display import (
 )
 from .email_notifier import EmailNotifier
 from .fetcher import TaskCardsFetcher
+from .models import Board, Change
 from .monitor import BoardMonitor, BoardState
 
 
@@ -138,8 +142,6 @@ def show(board_id: str):
 @main.command(name="list")
 def list_boards():
     """List all boards that have been checked."""
-    from .models import Board
-
     # Get all boards from database
     boards = Board.select().order_by(Board.last_checked.desc())
 
@@ -231,12 +233,6 @@ def history(board_id: str, limit: int, since: str | None, card: str | None):
         taskcards-monitor history BOARD_ID --since 2025-12-01
         taskcards-monitor history BOARD_ID --card CARD_ID
     """
-    from datetime import datetime
-
-    from rich.table import Table
-
-    from .models import Board, Change
-
     # Get board
     board = Board.get_or_none(Board.board_id == board_id)
     if not board:
@@ -289,8 +285,6 @@ def history(board_id: str, limit: int, since: str | None, card: str | None):
     # Add rows
     for change in changes:
         # Parse details JSON
-        import json
-
         details = json.loads(change.details)
 
         # Format change type
