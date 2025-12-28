@@ -466,7 +466,7 @@ def display_history(board_name: str, changes: list) -> None:
         table.add_row(
             change.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
             change_type,
-            change.card_id[:8] + "..." if len(change.card_id) > 8 else change.card_id,
+            change.card_id,
             detail_text,
         )
 
