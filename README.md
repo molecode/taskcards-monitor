@@ -19,7 +19,7 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the Gr
   - [Setup](#setup)
   - [Email Features](#email-features)
 - [What Changes Are Tracked?](#what-changes-are-tracked)
-- [State Files](#state-files)
+- [Database Storage](#database-storage)
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [AI-Generated Code](#ai-generated-code)
@@ -33,6 +33,8 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the Gr
 - Detect card title, description, and link changes
 - Track card movements between columns
 - **Track file attachments** (added/removed)
+- **Complete change history** with SQLite database
+- Query historical changes by date, card, or time range
 - Persistent state tracking with full board data
 - **Email notifications** when changes are detected (optional)
 
@@ -104,6 +106,7 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 - `check BOARD_ID` - Check a board for changes and save state
 - `show BOARD_ID` - Show the current saved state
 - `list` - List all boards that have been checked
+- `history BOARD_ID` - Show change history for a board
 - `inspect BOARD_ID` - Explore a board with detailed output (debugging, does NOT save state)
 
 ### Options
@@ -123,6 +126,14 @@ uv run taskcards-monitor show BOARD_ID
 
 # List all monitored boards
 uv run taskcards-monitor list
+
+# View change history for a board
+uv run taskcards-monitor history BOARD_ID
+
+# View history with filters
+uv run taskcards-monitor history BOARD_ID --since 2025-12-01
+uv run taskcards-monitor history BOARD_ID --limit 50
+uv run taskcards-monitor history BOARD_ID --card CARD_ID
 
 # Inspect board with detailed output (debugging, doesn't save state)
 uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
@@ -193,9 +204,23 @@ taskcards-monitor detects the following changes:
 
 All changes are displayed in the terminal and included in email notifications if configured.
 
-## State Files
+## Database Storage
 
-State files are saved in `~/.cache/taskcards-monitor/BOARD_ID.json`
+Board state and change history are stored in a SQLite database at:
+```
+~/.cache/taskcards-monitor/taskcards-monitor.db
+```
+
+This database contains:
+- **Current state** of all monitored boards
+- **Complete change history** with timestamps
+- **Temporal tracking** of cards, lists, and attachments
+
+The database provides:
+- Fast queries for historical data
+- Efficient storage with indexing
+- Point-in-time state reconstruction
+- Detailed audit trail of all changes
 
 ## Development
 
@@ -224,9 +249,13 @@ uv run pre-commit run --all-files
 ```
 taskcards_monitor/
 ├── __init__.py       # Package initialization
-├── cli.py            # Click-based CLI interface with Rich output
+├── cli.py            # Click-based CLI interface
+├── database.py       # Database connection and initialization
+├── display.py        # Rich output formatting and tables
 ├── fetcher.py        # HTTP client for fetching board data via GraphQL API
-└── monitor.py        # Change detection logic and state management
+├── models.py         # Peewee ORM models (Board, Card, List, Change, Attachment)
+├── monitor.py        # Change detection logic and state management
+└── email_notifier.py # Email notification functionality
 ```
 
 ## AI-Generated Code
@@ -242,7 +271,9 @@ While AI assisted in generating the code, all output has been reviewed and teste
 ## Future Enhancements
 
 Planned features (not yet implemented):
-- Change history tracking
+- Statistics and analytics (e.g., "How long do cards stay in each column?")
+- Export change history to CSV/JSON
+- Trend analysis over time
 
 ## Contributing
 
