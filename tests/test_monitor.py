@@ -1,9 +1,17 @@
 """Tests for the monitor module."""
 
-from pathlib import Path
+import pytest
 
-
+from taskcards_monitor.database import init_database
 from taskcards_monitor.monitor import BoardMonitor, BoardState
+
+
+@pytest.fixture
+def db_path(tmp_path):
+    """Provide a temporary database for tests."""
+    db_file = tmp_path / "test.db"
+    init_database(db_file)
+    return db_file
 
 
 class TestBoardState:
@@ -62,82 +70,39 @@ class TestBoardState:
         assert len(state.cards) == 1
         assert "card1" in state.cards
 
-    def test_to_dict(self):
-        """Test converting board state to dictionary."""
-        data = {
-            "cards": [
-                {
-                    "id": "card1",
-                    "title": "Task 1",
-                }
-            ],
-        }
-
-        state = BoardState(data)
-        result = state.to_dict()
-
-        assert "timestamp" in result
-        assert "board" in result
-        assert result["board"]["cards"][0]["title"] == "Task 1"
-
-    def test_from_dict(self):
-        """Test creating board state from dictionary."""
-        data = {
-            "timestamp": "2025-01-01T12:00:00",
-            "board": {
-                "cards": [
-                    {
-                        "id": "card1",
-                        "title": "Task 1",
-                    }
-                ],
-                "lists": [],
-            },
-        }
-
-        state = BoardState.from_dict(data)
-
-        assert state.timestamp == "2025-01-01T12:00:00"
-        assert state.cards["card1"]["title"] == "Task 1"
-
 
 class TestBoardMonitor:
     """Tests for BoardMonitor class."""
 
-    def test_init_creates_state_directory(self, tmp_path):
-        """Test that BoardMonitor creates state directory on init."""
-        state_dir = tmp_path / "test_state"
-        monitor = BoardMonitor("board123", state_dir=state_dir)
-
-        assert state_dir.exists()
-        assert state_dir.is_dir()
-        assert monitor.board_id == "board123"
-        assert monitor.state_file == state_dir / "board123.json"
-
-    def test_init_uses_default_directory(self):
-        """Test that BoardMonitor uses default directory when not specified."""
+    def test_init(self, db_path):
+        """Test that BoardMonitor initializes correctly."""
         monitor = BoardMonitor("board123")
+        assert monitor.board_id == "board123"
 
-        expected_dir = Path.home() / ".cache" / "taskcards-monitor"
-        assert monitor.state_dir == expected_dir
-        assert monitor.state_file == expected_dir / "board123.json"
-
-    def test_get_previous_state_no_file(self, tmp_path):
-        """Test getting previous state when no state file exists."""
-        monitor = BoardMonitor("board123", state_dir=tmp_path)
+    def test_get_previous_state_no_board(self, db_path):
+        """Test getting previous state when board doesn't exist."""
+        monitor = BoardMonitor("board123")
         state = monitor.get_previous_state()
 
         assert state is None
 
-    def test_save_and_load_state(self, tmp_path):
+    def test_save_and_load_state(self, db_path):
         """Test saving and loading board state."""
-        monitor = BoardMonitor("board123", state_dir=tmp_path)
+        monitor = BoardMonitor("board123")
 
         data = {
+            "id": "board123",
+            "name": "Test Board",
+            "description": "Test description",
+            "lists": [{"id": "list1", "name": "To Do", "position": 0}],
             "cards": [
                 {
                     "id": "card1",
                     "title": "Task 1",
+                    "description": "Description",
+                    "link": "",
+                    "kanbanPosition": {"listId": "list1"},
+                    "attachments": [],
                 }
             ],
         }
@@ -150,20 +115,11 @@ class TestBoardMonitor:
         loaded_state = monitor.get_previous_state()
 
         assert loaded_state is not None
-        assert loaded_state.cards == state.cards
+        assert loaded_state.board_name == "Test Board"
+        assert len(loaded_state.cards) == 1
+        assert loaded_state.cards["card1"]["title"] == "Task 1"
 
-    def test_get_previous_state_corrupted_file(self, tmp_path):
-        """Test getting previous state when file is corrupted."""
-        monitor = BoardMonitor("board123", state_dir=tmp_path)
-
-        # Create corrupted JSON file
-        with open(monitor.state_file, "w") as f:
-            f.write("{ invalid json")
-
-        state = monitor.get_previous_state()
-        assert state is None
-
-    def test_detect_changes_first_run(self):
+    def test_detect_changes_first_run(self, db_path):
         """Test detecting changes on first run."""
         data = {
             "cards": [
@@ -181,7 +137,7 @@ class TestBoardMonitor:
         assert changes["is_first_run"] is True
         assert changes["cards_count"] == 1
 
-    def test_detect_changes_no_changes(self):
+    def test_detect_changes_no_changes(self, db_path):
         """Test detecting changes when nothing changed."""
         data = {
             "cards": [
@@ -202,7 +158,7 @@ class TestBoardMonitor:
         assert len(changes["cards_removed"]) == 0
         assert len(changes["cards_changed"]) == 0
 
-    def test_detect_cards_added(self):
+    def test_detect_cards_added(self, db_path):
         """Test detecting when cards are added."""
         prev_data = {
             "cards": [
@@ -235,7 +191,7 @@ class TestBoardMonitor:
         assert changes["cards_added"][0]["id"] == "card2"
         assert changes["cards_added"][0]["title"] == "Task 2"
 
-    def test_detect_cards_removed(self):
+    def test_detect_cards_removed(self, db_path):
         """Test detecting when cards are removed."""
         prev_data = {
             "cards": [
@@ -268,7 +224,7 @@ class TestBoardMonitor:
         assert changes["cards_removed"][0]["id"] == "card2"
         assert changes["cards_removed"][0]["title"] == "Task 2"
 
-    def test_detect_cards_changed(self):
+    def test_detect_cards_changed(self, db_path):
         """Test detecting when cards have their title changed."""
         prev_data = {
             "cards": [
@@ -298,7 +254,7 @@ class TestBoardMonitor:
         assert changes["cards_changed"][0]["old_title"] == "Task 1"
         assert changes["cards_changed"][0]["new_title"] == "Updated Task 1"
 
-    def test_detect_multiple_changes(self):
+    def test_detect_multiple_changes(self, db_path):
         """Test detecting multiple types of changes at once."""
         prev_data = {
             "cards": [
@@ -337,7 +293,7 @@ class TestBoardMonitor:
         assert len(changes["cards_removed"]) == 1  # card2
         assert len(changes["cards_changed"]) == 1  # card1
 
-    def test_detect_attachments_added(self):
+    def test_detect_attachments_added(self, db_path):
         """Test detecting when attachments are added to a card."""
         prev_data = {
             "cards": [
@@ -375,7 +331,7 @@ class TestBoardMonitor:
         assert changes["cards_changed"][0]["attachments_added"][0]["filename"] == "document.pdf"
         assert len(changes["cards_changed"][0]["attachments_removed"]) == 0
 
-    def test_detect_attachments_removed(self):
+    def test_detect_attachments_removed(self, db_path):
         """Test detecting when attachments are removed from a card."""
         prev_data = {
             "cards": [

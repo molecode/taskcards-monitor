@@ -1,5 +1,7 @@
 """Display utilities for TaskCards monitor output."""
 
+import json
+
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -396,3 +398,77 @@ def display_inspect_results(state: BoardState) -> None:
     console.print(
         "[dim italic]Note: This inspection does not affect saved state or monitoring.[/dim italic]\n"
     )
+
+
+def display_history(board_name: str, changes: list) -> None:
+    """
+    Display change history for a board.
+
+    Args:
+        board_name: Name of the board
+        changes: List of Change model instances
+    """
+    if not changes:
+        console.print(f"[yellow]No changes found for board {board_name}[/yellow]")
+        return
+
+    # Display header
+    console.print(f"\n[bold cyan]Change History:[/bold cyan] {board_name}")
+    console.print(f"[dim]Showing {len(changes)} most recent changes[/dim]\n")
+
+    # Create table
+    table = Table(show_header=True, header_style="bold magenta")
+    table.add_column("Timestamp", style="dim", width=19)
+    table.add_column("Type", width=12)
+    table.add_column("Card ID", style="cyan", width=36)
+    table.add_column("Details", overflow="fold")
+
+    # Add rows
+    for change in changes:
+        # Parse details JSON
+        details = json.loads(change.details)
+
+        # Format change type
+        type_styles = {
+            "card_added": "[green]Added[/green]",
+            "card_removed": "[red]Removed[/red]",
+            "card_modified": "[yellow]Modified[/yellow]",
+            "card_moved": "[blue]Moved[/blue]",
+        }
+        change_type = type_styles.get(change.change_type, change.change_type)
+
+        # Format details based on type
+        if change.change_type == "card_added":
+            detail_text = f"[green]+[/green] {details.get('title', 'Untitled')}"
+            if details.get("column"):
+                detail_text += f" → {details['column']}"
+
+        elif change.change_type == "card_removed":
+            detail_text = f"[red]-[/red] {details.get('title', 'Untitled')}"
+            if details.get("column"):
+                detail_text += f" (from {details['column']})"
+
+        elif change.change_type == "card_modified":
+            parts = []
+            if details.get("old_title") != details.get("new_title"):
+                parts.append(f"title: '{details.get('old_title')}' → '{details.get('new_title')}'")
+            if details.get("old_column") != details.get("new_column"):
+                parts.append(f"column: {details.get('old_column')} → {details.get('new_column')}")
+            if details.get("old_description") != details.get("new_description"):
+                parts.append("description changed")
+            if details.get("old_link") != details.get("new_link"):
+                parts.append("link changed")
+            detail_text = ", ".join(parts) if parts else "modified"
+
+        else:
+            detail_text = str(details)
+
+        table.add_row(
+            change.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            change_type,
+            change.card_id,
+            detail_text,
+        )
+
+    console.print(table)
+    console.print()

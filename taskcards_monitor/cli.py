@@ -1,20 +1,24 @@
 """Command-line interface for TaskCards monitor."""
 
+from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
 import click
 
+from .database import init_database
 from .display import (
     console,
     display_boards_list,
     display_changes,
+    display_history,
     display_inspect_header,
     display_inspect_results,
     display_state,
 )
 from .email_notifier import EmailNotifier
 from .fetcher import TaskCardsFetcher
+from .models import Board, Change
 from .monitor import BoardMonitor, BoardState
 
 
@@ -22,7 +26,8 @@ from .monitor import BoardMonitor, BoardState
 @click.version_option(version=version("taskcards-monitor"))
 def main():
     """Monitor TaskCards boards for changes."""
-    pass
+    # Initialize database on startup
+    init_database()
 
 
 @main.command()
@@ -53,7 +58,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
 
     if verbose:
         if previous_state:
-            console.print(f"[dim]Previous state loaded from {monitor.state_file}[/dim]")
+            console.print("[dim]Previous state loaded from database[/dim]")
         else:
             console.print("[dim]No previous state found. This is the first run.[/dim]")
 
@@ -112,7 +117,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
     monitor.save_state(current_state)
 
     if verbose:
-        console.print(f"[dim]State saved to {monitor.state_file}[/dim]")
+        console.print("[dim]State saved to database[/dim]")
 
 
 @main.command()
@@ -136,36 +141,31 @@ def show(board_id: str):
 @main.command(name="list")
 def list_boards():
     """List all boards that have been checked."""
+    # Get all boards from database
+    boards = Board.select().order_by(Board.last_checked.desc())
 
-    # Get the state directory (same logic as BoardMonitor.__init__)
-    state_dir = Path.home() / ".cache" / "taskcards-monitor"
-
-    # Find all state files
-    state_files = sorted(state_dir.glob("*.json"))
-
-    if not state_files:
+    if not boards:
         console.print(
             "[yellow]No boards have been checked yet.[/yellow]\n"
             "Run 'taskcards-monitor check BOARD_ID' to monitor your first board."
         )
         return
 
-    # Load information from each state file using BoardMonitor
+    # Build boards info list
     boards_info = []
-    for state_file in state_files:
-        board_id = state_file.stem  # filename without .json extension
-        monitor = BoardMonitor(board_id, state_dir=state_dir)
+    for board in boards:
+        monitor = BoardMonitor(board.board_id)
         state = monitor.get_previous_state()
 
         if state is None:
-            # Skip invalid or corrupted state files
+            # Skip boards without valid state (shouldn't happen)
             continue
 
         boards_info.append(
             {
-                "board_id": board_id,
-                "board_name": state.board_name or "[dim]<unnamed>[/dim]",
-                "timestamp": state.timestamp,
+                "board_id": board.board_id,
+                "board_name": board.name or "[dim]<unnamed>[/dim]",
+                "timestamp": board.last_checked.isoformat(),
                 "cards": len(state.cards),
             }
         )
@@ -209,6 +209,65 @@ def inspect(board_id: str, token: str | None):
     except Exception as e:
         console.print(f"\n[bold red]Error:[/bold red] {str(e)}")
         raise click.Abort() from e
+
+
+@main.command()
+@click.argument("board_id")
+@click.option("--limit", "-n", type=int, default=20, help="Limit number of changes to display")
+@click.option(
+    "--since",
+    help="Show changes since date (ISO format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)",
+)
+@click.option("--card", help="Filter changes for a specific card ID")
+def history(board_id: str, limit: int, since: str | None, card: str | None):
+    """
+    Show change history for a board.
+
+    Displays a chronological log of all changes (added/removed/modified cards)
+    detected for the specified board.
+
+    Examples:
+        taskcards-monitor history BOARD_ID
+        taskcards-monitor history BOARD_ID --limit 50
+        taskcards-monitor history BOARD_ID --since 2025-12-01
+        taskcards-monitor history BOARD_ID --card CARD_ID
+    """
+    # Get board
+    board = Board.get_or_none(Board.board_id == board_id)
+    if not board:
+        console.print(
+            f"[yellow]No history found for board {board_id}[/yellow]\n"
+            f"Run 'taskcards-monitor check {board_id}' to start monitoring."
+        )
+        return
+
+    # Build query
+    query = Change.select().where(Change.board == board)
+
+    if since:
+        try:
+            # Try parsing with time first, then just date
+            try:
+                since_dt = datetime.fromisoformat(since)
+            except ValueError:
+                since_dt = datetime.fromisoformat(f"{since} 00:00:00")
+            query = query.where(Change.timestamp >= since_dt)
+        except ValueError:
+            console.print(
+                f"[red]Invalid date format:[/red] {since}\n"
+                "Use ISO format: YYYY-MM-DD or YYYY-MM-DD HH:MM:SS"
+            )
+            return
+
+    if card:
+        query = query.where(Change.card_id == card)
+
+    query = query.order_by(Change.timestamp.desc()).limit(limit)
+
+    changes = list(query)
+
+    # Display history using display module
+    display_history(board.name or board_id, changes)
 
 
 if __name__ == "__main__":
