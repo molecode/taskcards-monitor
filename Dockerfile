@@ -11,7 +11,7 @@ RUN addgroup -S taskcards && \
     chown -R taskcards:taskcards /app
 
 # Copy application files
-COPY --chown=taskcards:taskcards pyproject.toml uv.lock ./
+COPY --chown=taskcards:taskcards pyproject.toml uv.lock README.md ./
 COPY --chown=taskcards:taskcards taskcards_monitor/ ./taskcards_monitor/
 
 # Switch to non-root user before installing
