@@ -239,9 +239,9 @@ class BoardMonitor:
         # Save attachments
         self._save_attachments(board, state, now)
 
-        # Record changes if not first run
+        # Log changes if not first run
         if previous is not None and changes:
-            self._record_changes(board, changes, now)
+            self._log_changes(board, changes, now)
 
     def _save_lists(self, board: Board, lists: list[dict[str, Any]], timestamp: datetime) -> None:
         """Save lists to database with temporal tracking."""
@@ -452,8 +452,8 @@ class BoardMonitor:
                     removed_at=None,
                 )
 
-    def _record_changes(self, board: Board, changes: dict[str, Any], timestamp: datetime) -> None:
-        """Record changes in the changes table."""
+    def _log_changes(self, board: Board, changes: dict[str, Any], timestamp: datetime) -> None:
+        """Log changes in the changes table."""
         # Record added cards
         for card in changes.get("cards_added", []):
             Change.create(
