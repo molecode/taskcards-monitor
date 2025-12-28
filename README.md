@@ -23,7 +23,6 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the Gr
 - [Development](#development)
 - [Project Structure](#project-structure)
 - [AI-Generated Code](#ai-generated-code)
-- [Future Enhancements](#future-enhancements)
 - [Contributing](#contributing)
 
 ## Features
@@ -267,13 +266,6 @@ While AI assisted in generating the code, all output has been reviewed and teste
 - **Functionality**: Reliable change detection across different board configurations
 - **Best Practices**: Adherence to Python development standards
 - **Documentation**: Comprehensive usage examples and setup instructions
-
-## Future Enhancements
-
-Planned features (not yet implemented):
-- Statistics and analytics (e.g., "How long do cards stay in each column?")
-- Export change history to CSV/JSON
-- Trend analysis over time
 
 ## Contributing
 
