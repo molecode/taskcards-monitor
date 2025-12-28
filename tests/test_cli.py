@@ -7,8 +7,9 @@ import pytest
 from click.testing import CliRunner
 
 from taskcards_monitor.cli import main
+from taskcards_monitor.database import init_database
 from taskcards_monitor.display import create_table
-from taskcards_monitor.monitor import BoardState
+from taskcards_monitor.monitor import BoardMonitor, BoardState
 
 
 class TestCLI:
@@ -294,9 +295,6 @@ class TestCLI:
 
     def test_list_command_with_boards(self, runner, tmp_path):
         """Test list command with existing boards."""
-        from taskcards_monitor.database import init_database
-        from taskcards_monitor.monitor import BoardMonitor, BoardState
-
         # Initialize database
         db_path = tmp_path / ".cache" / "taskcards-monitor" / "taskcards-monitor.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -347,9 +345,6 @@ class TestCLI:
 
     def test_list_command_with_malformed_file(self, runner, tmp_path):
         """Test list command handles database properly."""
-        from taskcards_monitor.database import init_database
-        from taskcards_monitor.monitor import BoardMonitor, BoardState
-
         # Initialize database
         db_path = tmp_path / ".cache" / "taskcards-monitor" / "taskcards-monitor.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
