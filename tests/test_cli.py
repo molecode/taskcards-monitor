@@ -1,6 +1,5 @@
 """Tests for the CLI module."""
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -99,7 +98,6 @@ class TestCLI:
         mock_monitor = MagicMock()
         mock_monitor_class.return_value = mock_monitor
         mock_monitor.get_previous_state.return_value = None
-        mock_monitor.state_file = Path("/tmp/board123.json")
 
         mock_fetcher = MagicMock()
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
