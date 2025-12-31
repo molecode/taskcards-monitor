@@ -189,12 +189,23 @@ class TestCLI:
         }
 
         # Mock detect_changes to return changes with a new card added
-        mock_monitor.detect_changes.return_value = {
-            "is_first_run": False,
-            "cards_added": [{"id": "card2", "title": "Task 2"}],
-            "cards_removed": [],
-            "cards_changed": [],
-        }
+        from taskcards_monitor.changes import CardAdded, ChangeSet
+
+        mock_monitor.detect_changes.return_value = ChangeSet(
+            is_first_run=False,
+            cards_added=[
+                CardAdded(
+                    id="card2",
+                    title="Task 2",
+                    description="",
+                    link="",
+                    column=None,
+                    attachments=[],
+                )
+            ],
+            cards_removed=[],
+            cards_modified=[],
+        )
 
         mock_fetcher = MagicMock()
         mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
@@ -464,8 +475,9 @@ class TestDisplayFunctions:
     def test_display_changes_first_run(self, capsys):
         """Test display_changes for first run."""
         from taskcards_monitor.cli import display_changes
+        from taskcards_monitor.changes import ChangeSet
 
-        changes = {"is_first_run": True, "columns_count": 3, "cards_count": 5}
+        changes = ChangeSet(is_first_run=True, cards_count=5)
 
         display_changes(changes)
 
@@ -475,13 +487,14 @@ class TestDisplayFunctions:
     def test_display_changes_no_changes(self, capsys):
         """Test display_changes when no changes detected."""
         from taskcards_monitor.cli import display_changes
+        from taskcards_monitor.changes import ChangeSet
 
-        changes = {
-            "is_first_run": False,
-            "cards_added": [],
-            "cards_removed": [],
-            "cards_changed": [],
-        }
+        changes = ChangeSet(
+            is_first_run=False,
+            cards_added=[],
+            cards_removed=[],
+            cards_modified=[],
+        )
 
         display_changes(changes)
 

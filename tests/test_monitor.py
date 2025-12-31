@@ -134,8 +134,8 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, None)
 
-        assert changes["is_first_run"] is True
-        assert changes["cards_count"] == 1
+        assert changes.is_first_run is True
+        assert changes.cards_count == 1
 
     def test_detect_changes_no_changes(self, db_path):
         """Test detecting changes when nothing changed."""
@@ -153,10 +153,10 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert changes["is_first_run"] is False
-        assert len(changes["cards_added"]) == 0
-        assert len(changes["cards_removed"]) == 0
-        assert len(changes["cards_changed"]) == 0
+        assert changes.is_first_run is False
+        assert len(changes.cards_added) == 0
+        assert len(changes.cards_removed) == 0
+        assert len(changes.cards_modified) == 0
 
     def test_detect_cards_added(self, db_path):
         """Test detecting when cards are added."""
@@ -187,9 +187,9 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_added"]) == 1
-        assert changes["cards_added"][0]["id"] == "card2"
-        assert changes["cards_added"][0]["title"] == "Task 2"
+        assert len(changes.cards_added) == 1
+        assert changes.cards_added[0].id == "card2"
+        assert changes.cards_added[0].title == "Task 2"
 
     def test_detect_cards_removed(self, db_path):
         """Test detecting when cards are removed."""
@@ -220,9 +220,9 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_removed"]) == 1
-        assert changes["cards_removed"][0]["id"] == "card2"
-        assert changes["cards_removed"][0]["title"] == "Task 2"
+        assert len(changes.cards_removed) == 1
+        assert changes.cards_removed[0].id == "card2"
+        assert changes.cards_removed[0].title == "Task 2"
 
     def test_detect_cards_changed(self, db_path):
         """Test detecting when cards have their title changed."""
@@ -249,10 +249,10 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_changed"]) == 1
-        assert changes["cards_changed"][0]["id"] == "card1"
-        assert changes["cards_changed"][0]["old_title"] == "Task 1"
-        assert changes["cards_changed"][0]["new_title"] == "Updated Task 1"
+        assert len(changes.cards_modified) == 1
+        assert changes.cards_modified[0].id == "card1"
+        assert changes.cards_modified[0].old_title == "Task 1"
+        assert changes.cards_modified[0].new_title == "Updated Task 1"
 
     def test_detect_multiple_changes(self, db_path):
         """Test detecting multiple types of changes at once."""
@@ -289,9 +289,9 @@ class TestBoardMonitor:
         changes = monitor.detect_changes(current, previous)
 
         # Check all types of changes detected
-        assert len(changes["cards_added"]) == 1  # card3
-        assert len(changes["cards_removed"]) == 1  # card2
-        assert len(changes["cards_changed"]) == 1  # card1
+        assert len(changes.cards_added) == 1  # card3
+        assert len(changes.cards_removed) == 1  # card2
+        assert len(changes.cards_modified) == 1  # card1
 
     def test_detect_attachments_added(self, db_path):
         """Test detecting when attachments are added to a card."""
@@ -326,10 +326,10 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_changed"]) == 1
-        assert len(changes["cards_changed"][0]["attachments_added"]) == 1
-        assert changes["cards_changed"][0]["attachments_added"][0]["filename"] == "document.pdf"
-        assert len(changes["cards_changed"][0]["attachments_removed"]) == 0
+        assert len(changes.cards_modified) == 1
+        assert len(changes.cards_modified[0].attachments_added) == 1
+        assert changes.cards_modified[0].attachments_added[0].filename == "document.pdf"
+        assert len(changes.cards_modified[0].attachments_removed) == 0
 
     def test_detect_attachments_removed(self, db_path):
         """Test detecting when attachments are removed from a card."""
@@ -364,7 +364,7 @@ class TestBoardMonitor:
         monitor = BoardMonitor("board123")
         changes = monitor.detect_changes(current, previous)
 
-        assert len(changes["cards_changed"]) == 1
-        assert len(changes["cards_changed"][0]["attachments_removed"]) == 1
-        assert changes["cards_changed"][0]["attachments_removed"][0]["filename"] == "document.pdf"
-        assert len(changes["cards_changed"][0]["attachments_added"]) == 0
+        assert len(changes.cards_modified) == 1
+        assert len(changes.cards_modified[0].attachments_removed) == 1
+        assert changes.cards_modified[0].attachments_removed[0].filename == "document.pdf"
+        assert len(changes.cards_modified[0].attachments_added) == 0
