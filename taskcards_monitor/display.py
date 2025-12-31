@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from .changes import ChangeSet
 from .monitor import BoardState
 
 console = Console()
@@ -50,18 +51,18 @@ def _format_attachments(attachments: list) -> str:
         return "[dim]<none>[/dim]"
     return (
         f"{len(attachments)} file(s): "
-        + ", ".join(att.get("filename", "<unknown>") for att in attachments[:3])
+        + ", ".join(att.filename for att in attachments[:3])
         + (" ..." if len(attachments) > 3 else "")
     )
 
 
-def display_changes(changes: dict) -> None:
+def display_changes(changes: ChangeSet) -> None:
     """Display detected changes with beautiful formatting."""
 
-    if changes.get("is_first_run"):
+    if changes.is_first_run:
         console.print(
             Panel(
-                f"[green]Initial state saved[/green]\nCards: {changes.get('cards_count', 0)}",
+                f"[green]Initial state saved[/green]\nCards: {changes.cards_count}",
                 title="First Run",
                 border_style="green",
             )
@@ -69,13 +70,7 @@ def display_changes(changes: dict) -> None:
         return
 
     # Check if there are any changes
-    has_changes = any(
-        [
-            changes.get("cards_added"),
-            changes.get("cards_removed"),
-            changes.get("cards_changed"),
-        ]
-    )
+    has_changes = changes.has_changes()
 
     if not has_changes:
         console.print(Panel("[dim]No changes detected[/dim]", title="Status", border_style="blue"))
@@ -85,7 +80,7 @@ def display_changes(changes: dict) -> None:
     console.print("\n[bold green]Changes detected:[/bold green]\n")
 
     # Cards added
-    if changes.get("cards_added"):
+    if changes.cards_added:
         table = create_table(
             "Cards Added",
             "bold green",
@@ -98,20 +93,20 @@ def display_changes(changes: dict) -> None:
             ],
             [
                 (
-                    card.get("title", ""),
-                    card.get("description") or "[dim]<empty>[/dim]",
-                    _format_link(card.get("link", "")),
-                    card.get("column") or "[dim]<unknown>[/dim]",
-                    _format_attachments(card.get("attachments", [])),
+                    card.title,
+                    card.description or "[dim]<empty>[/dim]",
+                    _format_link(card.link),
+                    card.column or "[dim]<unknown>[/dim]",
+                    _format_attachments(card.attachments),
                 )
-                for card in changes["cards_added"]
+                for card in changes.cards_added
             ],
         )
         console.print(table)
         console.print()
 
     # Cards removed
-    if changes.get("cards_removed"):
+    if changes.cards_removed:
         table = create_table(
             "Cards Removed",
             "bold red",
@@ -124,33 +119,33 @@ def display_changes(changes: dict) -> None:
             ],
             [
                 (
-                    card.get("title", ""),
-                    card.get("description") or "[dim]<empty>[/dim]",
-                    _format_link(card.get("link", "")),
-                    card.get("column") or "[dim]<unknown>[/dim]",
-                    _format_attachments(card.get("attachments", [])),
+                    card.title,
+                    card.description or "[dim]<empty>[/dim]",
+                    _format_link(card.link),
+                    card.column or "[dim]<unknown>[/dim]",
+                    _format_attachments(card.attachments),
                 )
-                for card in changes["cards_removed"]
+                for card in changes.cards_removed
             ],
         )
         console.print(table)
         console.print()
 
     # Cards changed
-    if changes.get("cards_changed"):
+    if changes.cards_modified:
         rows = []
-        for card in changes["cards_changed"]:
+        for card in changes.cards_modified:
             # Determine what changed
-            old_title = card.get("old_title", "")
-            new_title = card.get("new_title", "")
-            old_description = card.get("old_description", "")
-            new_description = card.get("new_description", "")
-            old_link = card.get("old_link", "")
-            new_link = card.get("new_link", "")
-            old_column = card.get("old_column", "")
-            new_column = card.get("new_column", "")
-            attachments_added = card.get("attachments_added", [])
-            attachments_removed = card.get("attachments_removed", [])
+            old_title = card.old_title
+            new_title = card.new_title
+            old_description = card.old_description
+            new_description = card.new_description
+            old_link = card.old_link
+            new_link = card.new_link
+            old_column = card.old_column
+            new_column = card.new_column
+            attachments_added = card.attachments_added
+            attachments_removed = card.attachments_removed
 
             title_changed = old_title != new_title
             desc_changed = old_description != new_description
@@ -188,13 +183,13 @@ def display_changes(changes: dict) -> None:
             elif attachments_added:
                 attachment_change = (
                     f"[green]+{len(attachments_added)}[/green]: "
-                    + ", ".join(att.get("filename", "<unknown>") for att in attachments_added[:2])
+                    + ", ".join(att.filename for att in attachments_added[:2])
                     + (" ..." if len(attachments_added) > 2 else "")
                 )
             elif attachments_removed:
                 attachment_change = (
                     f"[red]-{len(attachments_removed)}[/red]: "
-                    + ", ".join(att.get("filename", "<unknown>") for att in attachments_removed[:2])
+                    + ", ".join(att.filename for att in attachments_removed[:2])
                     + (" ..." if len(attachments_removed) > 2 else "")
                 )
             else:

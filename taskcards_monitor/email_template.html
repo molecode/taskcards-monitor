@@ -128,7 +128,7 @@
                     <ul style="margin: 5px 0 0 20px; padding: 0;">
                         {% for attachment in card.attachments %}
                         <li style="font-size: 12px; margin: 4px 0;">
-                            <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
+                            <a href="{{ attachment.download_link }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
                             <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                         </li>
                         {% endfor %}
@@ -197,7 +197,7 @@
                         <ul style="margin: 5px 0 0 20px; padding: 0;">
                             {% for attachment in card.attachments_added %}
                             <li style="font-size: 12px; margin: 4px 0;">
-                                <a href="{{ attachment.downloadLink }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
+                                <a href="{{ attachment.download_link }}" style="color: #3498db; text-decoration: none;">{{ attachment.filename }}</a>
                                 <span style="color: #666; font-size: 11px;"> ({{ (attachment.length|int / 1024)|round(1) }} KB)</span>
                             </li>
                             {% endfor %}

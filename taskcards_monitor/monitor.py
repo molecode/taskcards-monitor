@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+from .changes import AttachmentData, CardAdded, CardModified, CardRemoved, ChangeSet
 from .models import Attachment, Board, Card, Change, List
 
 
@@ -484,7 +485,7 @@ class BoardMonitor:
                 details=json.dumps(card),
             )
 
-    def detect_changes(self, current: BoardState, previous: BoardState | None) -> dict[str, Any]:
+    def detect_changes(self, current: BoardState, previous: BoardState | None) -> ChangeSet:
         """
         Detect changes between current and previous board states.
 
@@ -493,19 +494,19 @@ class BoardMonitor:
             previous: Previous board state (None if first run)
 
         Returns:
-            Dictionary containing detected changes
+            ChangeSet containing detected changes
         """
         current_cards = current.cards
         previous_cards = previous.cards if previous else {}
 
         if previous is None:
-            return {
-                "is_first_run": True,
-                "cards_count": len(current_cards),
-                "cards_added": [],
-                "cards_removed": [],
-                "cards_changed": [],
-            }
+            return ChangeSet(
+                is_first_run=True,
+                cards_count=len(current_cards),
+                cards_added=[],
+                cards_removed=[],
+                cards_modified=[],
+            )
 
         # Create sets once for efficient set operations
         current_ids = set(current_cards)
@@ -516,32 +517,50 @@ class BoardMonitor:
 
         # Build added cards list (avoid repeated lookups)
         cards_added = [
-            {
-                "id": card_id,
-                "title": (card := current_cards[card_id]).get("title", ""),
-                "description": card.get("description", ""),
-                "link": card.get("link", ""),
-                "column": current.get_card_column_name(card_id),
-                "attachments": card.get("attachments", []),
-            }
+            CardAdded(
+                id=card_id,
+                title=(card := current_cards[card_id]).get("title", ""),
+                description=card.get("description", ""),
+                link=card.get("link", ""),
+                column=current.get_card_column_name(card_id),
+                attachments=[
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in card.get("attachments", [])
+                ],
+            )
             for card_id in added_ids
         ]
 
         # Build removed cards list (avoid repeated lookups)
         cards_removed = [
-            {
-                "id": card_id,
-                "title": (card := previous_cards[card_id]).get("title", ""),
-                "description": card.get("description", ""),
-                "link": card.get("link", ""),
-                "column": previous.get_card_column_name(card_id),
-                "attachments": card.get("attachments", []),
-            }
+            CardRemoved(
+                id=card_id,
+                title=(card := previous_cards[card_id]).get("title", ""),
+                description=card.get("description", ""),
+                link=card.get("link", ""),
+                column=previous.get_card_column_name(card_id),
+                attachments=[
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in card.get("attachments", [])
+                ],
+            )
             for card_id in removed_ids
         ]
 
         # Build changed cards list (extract values once per card)
-        def _get_changed_card(card_id: str) -> dict[str, Any] | None:
+        def _get_changed_card(card_id: str) -> CardModified | None:
             curr = current_cards[card_id]
             prev = previous_cards[card_id]
 
@@ -572,32 +591,48 @@ class BoardMonitor:
                 removed_attachment_ids = prev_attachment_ids - curr_attachment_ids
 
                 added_attachments = [
-                    att for att in curr_attachments if att.get("id") in added_attachment_ids
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in curr_attachments
+                    if att.get("id") in added_attachment_ids
                 ]
                 removed_attachments = [
-                    att for att in prev_attachments if att.get("id") in removed_attachment_ids
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in prev_attachments
+                    if att.get("id") in removed_attachment_ids
                 ]
 
-                return {
-                    "id": card_id,
-                    "old_title": prev_title,
-                    "new_title": curr_title,
-                    "old_description": prev_desc,
-                    "new_description": curr_desc,
-                    "old_link": prev_link,
-                    "new_link": curr_link,
-                    "old_column": prev_column,
-                    "new_column": curr_column,
-                    "attachments_added": added_attachments,
-                    "attachments_removed": removed_attachments,
-                }
+                return CardModified(
+                    id=card_id,
+                    old_title=prev_title,
+                    new_title=curr_title,
+                    old_description=prev_desc,
+                    new_description=curr_desc,
+                    old_link=prev_link,
+                    new_link=curr_link,
+                    old_column=prev_column,
+                    new_column=curr_column,
+                    attachments_added=added_attachments,
+                    attachments_removed=removed_attachments,
+                )
             return None
 
         cards_changed = [card for card_id in common_ids if (card := _get_changed_card(card_id))]
 
-        return {
-            "is_first_run": False,
-            "cards_added": cards_added,
-            "cards_removed": cards_removed,
-            "cards_changed": cards_changed,
-        }
+        return ChangeSet(
+            is_first_run=False,
+            cards_added=cards_added,
+            cards_removed=cards_removed,
+            cards_modified=cards_changed,
+        )
