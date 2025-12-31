@@ -523,7 +523,16 @@ class BoardMonitor:
                 description=card.get("description", ""),
                 link=card.get("link", ""),
                 column=current.get_card_column_name(card_id),
-                attachments=[AttachmentData.from_dict(att) for att in card.get("attachments", [])],
+                attachments=[
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in card.get("attachments", [])
+                ],
             )
             for card_id in added_ids
         ]
@@ -536,7 +545,16 @@ class BoardMonitor:
                 description=card.get("description", ""),
                 link=card.get("link", ""),
                 column=previous.get_card_column_name(card_id),
-                attachments=[AttachmentData.from_dict(att) for att in card.get("attachments", [])],
+                attachments=[
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
+                    for att in card.get("attachments", [])
+                ],
             )
             for card_id in removed_ids
         ]
@@ -573,12 +591,24 @@ class BoardMonitor:
                 removed_attachment_ids = prev_attachment_ids - curr_attachment_ids
 
                 added_attachments = [
-                    AttachmentData.from_dict(att)
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
                     for att in curr_attachments
                     if att.get("id") in added_attachment_ids
                 ]
                 removed_attachments = [
-                    AttachmentData.from_dict(att)
+                    AttachmentData(
+                        id=att.get("id", ""),
+                        filename=att.get("filename", ""),
+                        download_link=att.get("downloadLink", ""),
+                        mime_type=att.get("mimetype"),
+                        length=att.get("length"),
+                    )
                     for att in prev_attachments
                     if att.get("id") in removed_attachment_ids
                 ]

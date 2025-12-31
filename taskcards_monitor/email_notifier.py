@@ -5,7 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any
 
 import yaml
 from jinja2 import Template
@@ -102,9 +101,9 @@ class EmailNotifier:
             board_id=board_id,
             board_name=board_name,
             timestamp=timestamp,
-            added_cards=[card.to_dict() for card in changes.cards_added],
-            removed_cards=[card.to_dict() for card in changes.cards_removed],
-            changed_cards=[card.to_dict() for card in changes.cards_modified],
+            added_cards=changes.cards_added,
+            removed_cards=changes.cards_removed,
+            changed_cards=changes.cards_modified,
             token=token,
         )
 
@@ -115,9 +114,9 @@ class EmailNotifier:
         board_id: str,
         board_name: str | None,
         timestamp: str,
-        added_cards: list[dict[str, Any]],
-        removed_cards: list[dict[str, Any]],
-        changed_cards: list[dict[str, Any]],
+        added_cards: list,
+        removed_cards: list,
+        changed_cards: list,
         token: str | None = None,
     ) -> None:
         """Send email notification about board changes.
@@ -126,9 +125,9 @@ class EmailNotifier:
             board_id: The board identifier
             board_name: The board name (optional)
             timestamp: Timestamp of the check
-            added_cards: List of added cards
-            removed_cards: List of removed cards
-            changed_cards: List of changed cards
+            added_cards: List of added cards (CardAdded dataclasses)
+            removed_cards: List of removed cards (CardRemoved dataclasses)
+            changed_cards: List of changed cards (CardModified dataclasses)
             token: View token for private boards (optional)
         """
         # Construct board URL (only for public boards without token)

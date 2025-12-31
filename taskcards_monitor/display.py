@@ -51,7 +51,7 @@ def _format_attachments(attachments: list) -> str:
         return "[dim]<none>[/dim]"
     return (
         f"{len(attachments)} file(s): "
-        + ", ".join(att.get("filename", "<unknown>") for att in attachments[:3])
+        + ", ".join(att.filename for att in attachments[:3])
         + (" ..." if len(attachments) > 3 else "")
     )
 
@@ -97,7 +97,7 @@ def display_changes(changes: ChangeSet) -> None:
                     card.description or "[dim]<empty>[/dim]",
                     _format_link(card.link),
                     card.column or "[dim]<unknown>[/dim]",
-                    _format_attachments([att.to_dict() for att in card.attachments]),
+                    _format_attachments(card.attachments),
                 )
                 for card in changes.cards_added
             ],
@@ -123,7 +123,7 @@ def display_changes(changes: ChangeSet) -> None:
                     card.description or "[dim]<empty>[/dim]",
                     _format_link(card.link),
                     card.column or "[dim]<unknown>[/dim]",
-                    _format_attachments([att.to_dict() for att in card.attachments]),
+                    _format_attachments(card.attachments),
                 )
                 for card in changes.cards_removed
             ],
