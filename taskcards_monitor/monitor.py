@@ -352,6 +352,8 @@ class BoardMonitor:
             existing = current_cards.get(card_id)
 
             if card_id in current_card_ids:
+                # Type narrowing: if card_id is in current_card_ids, existing must not be None
+                assert existing is not None
                 # Check if anything changed
                 if (
                     existing.title == title

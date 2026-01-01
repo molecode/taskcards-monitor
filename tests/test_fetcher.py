@@ -105,8 +105,8 @@ class TestTaskCardsFetcher:
         fetcher = TaskCardsFetcher()
         fetcher.client = MagicMock()
 
-        fetcher._create_visitor = MagicMock(return_value="visitor123")
-        fetcher._grant_access = MagicMock()
+        fetcher._create_visitor = MagicMock(return_value="visitor123")  # type: ignore
+        fetcher._grant_access = MagicMock()  # type: ignore
 
         response = MagicMock()
         response.json.return_value = {
@@ -123,8 +123,8 @@ class TestTaskCardsFetcher:
 
         result = fetcher.fetch_board("board123", token="secret")
 
-        fetcher._create_visitor.assert_called_once()
-        fetcher._grant_access.assert_called_once_with("board123", "secret")
+        fetcher._create_visitor.assert_called_once()  # type: ignore
+        fetcher._grant_access.assert_called_once_with("board123", "secret")  # type: ignore
         # After simplification, fetch_board returns board data directly (not wrapped)
         assert result["id"] == "board123"
         assert result["lists"] == [{"id": "list1"}]
@@ -134,7 +134,7 @@ class TestTaskCardsFetcher:
         """GraphQL errors are surfaced as ValueError."""
         fetcher = TaskCardsFetcher()
         fetcher.client = MagicMock()
-        fetcher._create_visitor = MagicMock(return_value="visitor123")
+        fetcher._create_visitor = MagicMock(return_value="visitor123")  # type: ignore
 
         response = MagicMock()
         response.json.return_value = {
@@ -155,7 +155,7 @@ class TestTaskCardsFetcher:
         """Missing board data raises ValueError."""
         fetcher = TaskCardsFetcher()
         fetcher.client = MagicMock()
-        fetcher._create_visitor = MagicMock(return_value="visitor123")
+        fetcher._create_visitor = MagicMock(return_value="visitor123")  # type: ignore
 
         response = MagicMock()
         response.json.return_value = {"data": {"board": None}}
@@ -169,7 +169,7 @@ class TestTaskCardsFetcher:
         """HTTP status errors are wrapped as ValueError."""
         fetcher = TaskCardsFetcher()
         fetcher.client = MagicMock()
-        fetcher._create_visitor = MagicMock(return_value="visitor123")
+        fetcher._create_visitor = MagicMock(return_value="visitor123")  # type: ignore
 
         error = httpx.HTTPStatusError(
             "fail",
