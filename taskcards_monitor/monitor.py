@@ -351,7 +351,7 @@ class BoardMonitor:
 
             existing = current_cards.get(card_id)
 
-            if card_id in current_card_ids:
+            if card_id in current_card_ids and existing:
                 # Check if anything changed
                 if (
                     existing.title == title
