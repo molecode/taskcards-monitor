@@ -240,7 +240,7 @@ uv run ruff check --fix taskcards_monitor/
 uv run ruff format taskcards_monitor/
 
 # Run type checker
-uvx ty check
+uv run ty check
 
 # Run pre-commit checks manually
 uv run pre-commit run --all-files
