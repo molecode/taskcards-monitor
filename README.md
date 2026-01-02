@@ -6,8 +6,9 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the Gr
 
 - [Features](#features)
 - [Installation](#installation)
-  - [Using Docker (Recommended for Production)](#using-docker-recommended-for-production)
-  - [Local Development](#local-development)
+  - [Using pipx (Recommended)](#using-pipx-recommended)
+  - [Using Docker](#using-docker)
+  - [From Source (Development)](#from-source-development)
 - [Quick Start](#quick-start)
   - [Monitor a Public Board](#monitor-a-public-board)
   - [Monitor a Private Board](#monitor-a-private-board)
@@ -39,9 +40,19 @@ Monitor [TaskCards](https://www.taskcards.de) boards for card changes via the Gr
 
 ## Installation
 
-### Using Docker (Recommended for Production)
+### Using pipx (Recommended)
 
-**Option 1: Docker Compose (Simplest)**
+```bash
+# Install from PyPI using pipx (recommended for CLI tools)
+pipx install taskcards-monitor
+
+# Or using pip
+pip install taskcards-monitor
+```
+
+### Using Docker
+
+**Option 1: Docker Compose**
 
 ```bash
 # 1. Create required directories and .env file
@@ -56,7 +67,7 @@ cp .env.example .env
 docker compose run --rm taskcards-monitor
 ```
 
-**Option 2: Docker Run (Direct)**
+**Option 2: Docker Run**
 
 ```bash
 # Pull the image
@@ -71,12 +82,15 @@ docker run --rm \
 
 See [Docker Usage Guide](docs/DOCKER.md) for detailed setup including cron jobs and email notifications.
 
-### Local Development
+### From Source (Development)
 
 ```bash
+# Clone the repository
+git clone https://github.com/molecode/taskcards-monitor.git
+cd taskcards-monitor
+
 # Install dependencies
 uv sync
-
 ```
 
 ## Quick Start
@@ -84,13 +98,13 @@ uv sync
 ### Monitor a Public Board
 
 ```bash
-uv run taskcards-monitor check BOARD_ID
+taskcards-monitor check BOARD_ID
 ```
 
 ### Monitor a Private Board
 
 ```bash
-uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
+taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 ```
 
 **Finding Board IDs and Tokens:**
@@ -118,30 +132,30 @@ uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
 ```bash
 # Check a private board for changes (saves state)
-uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN
+taskcards-monitor check BOARD_ID --token VIEW_TOKEN
 
 # Show saved state
-uv run taskcards-monitor show BOARD_ID
+taskcards-monitor show BOARD_ID
 
 # List all monitored boards
-uv run taskcards-monitor list
+taskcards-monitor list
 
 # View change history for a board
-uv run taskcards-monitor history BOARD_ID
+taskcards-monitor history BOARD_ID
 
 # View history with filters
-uv run taskcards-monitor history BOARD_ID --since 2025-12-01
-uv run taskcards-monitor history BOARD_ID --limit 50
-uv run taskcards-monitor history BOARD_ID --card CARD_ID
+taskcards-monitor history BOARD_ID --since 2025-12-01
+taskcards-monitor history BOARD_ID --limit 50
+taskcards-monitor history BOARD_ID --card CARD_ID
 
 # Inspect board with detailed output (debugging, doesn't save state)
-uv run taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
+taskcards-monitor inspect BOARD_ID --token VIEW_TOKEN
 
 # Verbose mode (shows detailed progress)
-uv run taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
+taskcards-monitor check BOARD_ID --token VIEW_TOKEN -v
 
 # With email notifications
-uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+taskcards-monitor check BOARD_ID --email-config email-config.yaml
 ```
 
 ## Email Notifications
@@ -176,7 +190,7 @@ email:
 
 3. Run the check command with the email config:
 ```bash
-uv run taskcards-monitor check BOARD_ID --email-config email-config.yaml
+taskcards-monitor check BOARD_ID --email-config email-config.yaml
 ```
 
 ### Email Features
