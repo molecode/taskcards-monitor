@@ -52,3 +52,8 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[project.urls]
+Source = "https://github.com/molecode/taskcards-monitor"
+Issues = "https://github.com/molecode/taskcards-monitor/issues"
+Changelog = "https://github.com/molecode/taskcards-monitor/releases"
