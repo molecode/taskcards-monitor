@@ -264,14 +264,16 @@ uv run pre-commit run --all-files
 
 ```
 taskcards_monitor/
-├── __init__.py       # Package initialization
-├── cli.py            # Click-based CLI interface
-├── database.py       # Database connection and initialization
-├── display.py        # Rich output formatting and tables
-├── fetcher.py        # HTTP client for fetching board data via GraphQL API
-├── models.py         # Peewee ORM models (Board, Card, List, Change, Attachment)
-├── monitor.py        # Change detection logic and state management
-└── email_notifier.py # Email notification functionality
+├── __init__.py          # Package initialization
+├── changes.py           # Typed dataclasses for change detection
+├── cli.py               # Click-based CLI interface
+├── database.py          # Database connection and initialization
+├── display.py           # Rich output formatting and tables
+├── email_notifier.py    # Email notification functionality
+├── email_template.html  # HTML template for email notifications
+├── fetcher.py           # HTTP client for fetching board data via GraphQL API
+├── models.py            # Peewee ORM models (Board, Card, List, Change, Attachment)
+└── monitor.py           # Change detection logic and state management
 ```
 
 ## AI-Generated Code
