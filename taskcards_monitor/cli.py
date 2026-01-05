@@ -112,6 +112,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
                 import traceback
 
                 console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise click.Abort() from e
 
     # Save current state
     monitor.save_state(current_state)
