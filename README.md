@@ -229,12 +229,6 @@ This database contains:
 - **Complete change history** with timestamps
 - **Temporal tracking** of cards, lists, and attachments
 
-The database provides:
-- Fast queries for historical data
-- Efficient storage with indexing
-- Point-in-time state reconstruction
-- Detailed audit trail of all changes
-
 ## Development
 
 ```bash
@@ -280,11 +274,7 @@ taskcards_monitor/
 
 This project was developed mainly with the assistance of [Claude Code](https://claude.ai/code).
 
-While AI assisted in generating the code, all output has been reviewed and tested to ensure:
-- **Security**: Proper handling of credentials and tokens
-- **Functionality**: Reliable change detection across different board configurations
-- **Best Practices**: Adherence to Python development standards
-- **Documentation**: Comprehensive usage examples and setup instructions
+While AI assisted in generating the code, all output has been reviewed and tested.
 
 ## Contributing
 
