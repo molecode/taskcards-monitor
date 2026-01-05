@@ -1,6 +1,6 @@
 [project]
 name = "taskcards-monitor"
-version = "0.7.1"
+version = "0.7.2"
 description = "Monitor TaskCards boards for changes using GraphQL API"
 readme = "README.md"
 authors = [
