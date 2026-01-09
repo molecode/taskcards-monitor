@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Timo Schäpe", email = "info@timoschaepe.de" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "click==8.3.1",
     "httpx==0.28.1",
@@ -51,7 +51,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py310"
 
 [project.urls]
 Source = "https://github.com/molecode/taskcards-monitor"
