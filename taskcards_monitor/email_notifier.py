@@ -130,10 +130,10 @@ class EmailNotifier:
             changed_cards: List of changed cards (CardModified dataclasses)
             token: View token for private boards (optional)
         """
-        # Construct board URL (only for public boards without token)
-        board_url = None
-        if not token:
-            board_url = f"https://www.taskcards.de/#/board/{board_id}/view"
+        # Construct board URL
+        board_url = f"https://www.taskcards.de/#/board/{board_id}/view"
+        if token:
+            board_url += f"?token={token}"
 
         # Prepare template context
         context = {
