@@ -56,7 +56,7 @@ class TaskCardsFetcher:
 
     def __enter__(self):
         """Context manager entry."""
-        self.client = httpx.Client(timeout=self.timeout)
+        self.client = httpx.Client(timeout=self.timeout, verify=False)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -80,10 +80,7 @@ class TaskCardsFetcher:
         mutation = "mutation { createVisitor { id noActive } }"
 
         try:
-            response = self.client.post(
-                self.GRAPHQL_URL,
-                json={"query": mutation},
-            )
+            response = self.client.post(self.GRAPHQL_URL, json={"query": mutation})
             response.raise_for_status()
 
             data = response.json()
