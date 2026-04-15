@@ -23,7 +23,7 @@ taskcards-monitor = "taskcards_monitor.cli:main"
 test = [
     "pytest==9.0.3",
     "pytest-mock==3.15.1",
-    "pytest-cov==7.0.0",
+    "pytest-cov==7.1.0",
 ]
 dev = [
     { include-group = "test" },
