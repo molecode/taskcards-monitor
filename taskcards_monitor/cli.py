@@ -33,6 +33,13 @@ def main():
 @main.command()
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
+@click.option(
+    "--password",
+    "-p",
+    envvar="TASKCARDS_PASSWORD",
+    default="",
+    help="Board password (or set TASKCARDS_PASSWORD env var)",
+)
 @click.option("-v", "--verbose", is_flag=True, help="Enable verbose logging")
 @click.option(
     "--email-config",
@@ -40,13 +47,15 @@ def main():
     type=click.Path(exists=True, path_type=Path),
     help="Path to email configuration YAML file",
 )
-def check(board_id: str, token: str | None, verbose: bool, email_config: Path | None):
+def check(board_id: str, token: str | None, password: str, verbose: bool, email_config: Path | None):
     """Check a board for changes and log any differences."""
 
     if verbose:
         console.print(f"[dim]Checking board: {board_id}[/dim]")
         if token:
             console.print(f"[dim]Using view token: {token[:8]}...[/dim]")
+        if password:
+            console.print("[dim]Using board password[/dim]")
         if email_config:
             console.print(f"[dim]Email notifications enabled: {email_config}[/dim]")
 
@@ -68,7 +77,7 @@ def check(board_id: str, token: str | None, verbose: bool, email_config: Path | 
             console.status("[bold green]Fetching board data...", spinner="dots"),
             TaskCardsFetcher() as fetcher,
         ):
-            data = fetcher.fetch_board(board_id, token=token)
+            data = fetcher.fetch_board(board_id, token=token, password=password)
 
         if verbose:
             console.print("[dim]Board data fetched successfully[/dim]")
@@ -182,7 +191,14 @@ def list_boards():
 @main.command()
 @click.argument("board_id")
 @click.option("--token", "-t", help="View token for private/protected boards")
-def inspect(board_id: str, token: str | None):
+@click.option(
+    "--password",
+    "-p",
+    envvar="TASKCARDS_PASSWORD",
+    default="",
+    help="Board password (or set TASKCARDS_PASSWORD env var)",
+)
+def inspect(board_id: str, token: str | None, password: str):
     """
     Inspect a board for debugging (detailed output).
 
@@ -196,7 +212,7 @@ def inspect(board_id: str, token: str | None):
         console.print("\n[cyan]Fetching board data...[/cyan]")
 
         with TaskCardsFetcher() as fetcher:
-            data = fetcher.fetch_board(board_id, token=token)
+            data = fetcher.fetch_board(board_id, token=token, password=password)
 
         # Create state for display
         state = BoardState(data)

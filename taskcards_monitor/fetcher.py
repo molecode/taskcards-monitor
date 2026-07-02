@@ -94,13 +94,15 @@ class TaskCardsFetcher:
         except httpx.HTTPError as e:
             raise ValueError(f"Failed to create visitor: {e}") from e
 
-    def _grant_access(self, board_id: str, view_token: str) -> None:
+    def _grant_access(self, board_id: str, view_token: str, password: str = "") -> None:
         """
         Grant access to a private board using the view token.
 
         Args:
             board_id: The board ID
             view_token: The view token for the board
+            password: The board password (empty string if the board is not
+                additionally password-protected)
 
         Raises:
             ValueError: If access cannot be granted
@@ -114,7 +116,7 @@ class TaskCardsFetcher:
             response = self.client.post(
                 url,
                 headers={"x-token": self.x_token},
-                json={"password": ""},
+                json={"password": password},
             )
             response.raise_for_status()
 
@@ -123,7 +125,8 @@ class TaskCardsFetcher:
                 raise ValueError(f"Board {board_id} not found or view token is invalid") from e
             elif e.response.status_code in (401, 403):
                 raise ValueError(
-                    f"Access denied to board {board_id}. Check your view token."
+                    f"Access denied to board {board_id}. "
+                    f"Check your view token and password."
                 ) from e
             else:
                 raise ValueError(f"Failed to grant access: {e}") from e
@@ -134,6 +137,7 @@ class TaskCardsFetcher:
         self,
         board_id: str,
         token: str | None = None,
+        password: str = "",
     ) -> dict[str, Any]:
         """
         Fetch board data using GraphQL API.
@@ -141,6 +145,7 @@ class TaskCardsFetcher:
         Args:
             board_id: The board ID
             token: Optional view token for private boards
+            password: Optional board password for password-protected boards
 
         Returns:
             Dictionary containing board data with lists and cards
@@ -156,7 +161,7 @@ class TaskCardsFetcher:
 
         # Step 2: Grant access if view token is provided
         if token:
-            self._grant_access(board_id, token)
+            self._grant_access(board_id, token, password)
 
         # Step 3: Fetch board data
         try:
