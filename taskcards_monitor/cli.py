@@ -270,7 +270,9 @@ def history(board_id: str, limit: int, since: str | None, card: str | None):
                 since_dt = datetime.fromisoformat(since)
             except ValueError:
                 since_dt = datetime.fromisoformat(f"{since} 00:00:00")
-            query = query.where(Change.timestamp >= since_dt)
+            # peewee stubs declare __ge__ as a ClassVar callable, which ty
+            # does not resolve as an operator implementation
+            query = query.where(Change.timestamp >= since_dt)  # ty: ignore[unsupported-operator]
         except ValueError:
             console.print(
                 f"[red]Invalid date format:[/red] {since}\n"
