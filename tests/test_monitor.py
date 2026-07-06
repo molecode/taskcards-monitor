@@ -467,6 +467,7 @@ class TestBoardMonitorPersistence:
         )
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert state.cards["card1"]["title"] == "Updated Task 1"
 
         changes = list(Change.select().where(Change.change_type == "card_modified"))
@@ -514,6 +515,7 @@ class TestBoardMonitorPersistence:
         monitor.save_state(BoardState(self.make_board_data([self.make_card("card1", "Task 1")])))
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert "card2" not in state.cards
 
         changes = list(Change.select().where(Change.change_type == "card_removed"))
@@ -539,6 +541,7 @@ class TestBoardMonitorPersistence:
         )
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert len(state.lists) == 1
         assert state.lists[0]["name"] == "Backlog"
 
@@ -561,6 +564,7 @@ class TestBoardMonitorPersistence:
         )
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert len(state.cards["card1"]["attachments"]) == 1
         assert state.cards["card1"]["attachments"][0]["filename"] == "doc.pdf"
 
@@ -568,6 +572,7 @@ class TestBoardMonitorPersistence:
         monitor.save_state(BoardState(self.make_board_data([self.make_card("card1", "Task 1")])))
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert state.cards["card1"]["attachments"] == []
 
     def test_save_state_skips_lists_without_id(self, db_path):
@@ -581,6 +586,7 @@ class TestBoardMonitorPersistence:
         monitor.save_state(BoardState(self.make_board_data([], lists=lists)))
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert len(state.lists) == 1
         assert state.lists[0]["id"] == "list1"
 
@@ -595,4 +601,5 @@ class TestBoardMonitorPersistence:
         monitor.save_state(BoardState(renamed))
 
         state = monitor.get_previous_state()
+        assert state is not None
         assert state.board_name == "Renamed Board"
