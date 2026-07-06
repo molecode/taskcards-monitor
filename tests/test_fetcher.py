@@ -74,6 +74,23 @@ class TestTaskCardsFetcher:
         fetcher.client.post.assert_called_once()
         call_args = fetcher.client.post.call_args
         assert call_args.kwargs["headers"] == {"x-token": "visitor123"}
+        assert call_args.kwargs["json"] == {"password": ""}
+
+    def test_grant_access_sends_password(self):
+        """Granting access includes the board password in the request body."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher.x_token = "visitor123"
+
+        response = MagicMock()
+        response.raise_for_status.return_value = None
+        fetcher.client.post.return_value = response
+
+        fetcher._grant_access("board123", "token123", "hunter2")
+
+        fetcher.client.post.assert_called_once()
+        call_args = fetcher.client.post.call_args
+        assert call_args.kwargs["json"] == {"password": "hunter2"}
 
     def test_grant_access_http_error(self):
         """Grant access surfaces http errors."""
@@ -124,11 +141,29 @@ class TestTaskCardsFetcher:
         result = fetcher.fetch_board("board123", token="secret")
 
         fetcher._create_visitor.assert_called_once()  # type: ignore
-        fetcher._grant_access.assert_called_once_with("board123", "secret")  # type: ignore
+        fetcher._grant_access.assert_called_once_with("board123", "secret", "")  # type: ignore
         # After simplification, fetch_board returns board data directly (not wrapped)
         assert result["id"] == "board123"
         assert result["lists"] == [{"id": "list1"}]
         assert result["cards"] == [{"id": "card1"}]
+
+    def test_fetch_board_with_password(self):
+        """fetch_board forwards the password to _grant_access."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+
+        fetcher._create_visitor = MagicMock(return_value="visitor123")  # type: ignore
+        fetcher._grant_access = MagicMock()  # type: ignore
+
+        response = MagicMock()
+        response.json.return_value = {"data": {"board": {"id": "board123"}}}
+        response.raise_for_status.return_value = None
+        fetcher.client.post.return_value = response
+
+        result = fetcher.fetch_board("board123", token="secret", password="hunter2")
+
+        fetcher._grant_access.assert_called_once_with("board123", "secret", "hunter2")  # type: ignore
+        assert result["id"] == "board123"
 
     def test_fetch_board_graphql_error(self):
         """GraphQL errors are surfaced as ValueError."""
