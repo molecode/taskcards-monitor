@@ -125,8 +125,7 @@ class TaskCardsFetcher:
                 raise ValueError(f"Board {board_id} not found or view token is invalid") from e
             elif e.response.status_code in (401, 403):
                 raise ValueError(
-                    f"Access denied to board {board_id}. "
-                    f"Check your view token and password."
+                    f"Access denied to board {board_id}. Check your view token and password."
                 ) from e
             else:
                 raise ValueError(f"Failed to grant access: {e}") from e

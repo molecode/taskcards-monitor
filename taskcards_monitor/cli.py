@@ -47,7 +47,9 @@ def main():
     type=click.Path(exists=True, path_type=Path),
     help="Path to email configuration YAML file",
 )
-def check(board_id: str, token: str | None, password: str, verbose: bool, email_config: Path | None):
+def check(
+    board_id: str, token: str | None, password: str, verbose: bool, email_config: Path | None
+):
     """Check a board for changes and log any differences."""
 
     if verbose:
