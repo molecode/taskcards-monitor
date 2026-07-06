@@ -56,7 +56,7 @@ class TaskCardsFetcher:
 
     def __enter__(self):
         """Context manager entry."""
-        self.client = httpx.Client(timeout=self.timeout, verify=False)
+        self.client = httpx.Client(timeout=self.timeout)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
