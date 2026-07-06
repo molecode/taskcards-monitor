@@ -498,6 +498,133 @@ class TestCLI:
         assert result.exit_code == 0
         mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123", password="")
 
+    def test_list_command_skips_boards_without_state(self, runner, tmp_path):
+        """Test list command when a board exists but has no valid state."""
+        db_path = tmp_path / "taskcards-monitor.db"
+
+        with patch("taskcards_monitor.database.get_default_db_path") as mock_db_path:
+            mock_db_path.return_value = db_path
+            init_database(db_path)
+
+            # Create a board in database
+            monitor = BoardMonitor("board123")
+            monitor.save_state(
+                BoardState({"id": "board123", "name": "B", "lists": [], "cards": []})
+            )
+
+            # But make state loading return None
+            with patch.object(BoardMonitor, "get_previous_state", return_value=None):
+                result = runner.invoke(main, ["list"])
+
+        assert result.exit_code == 0
+        assert "No valid board states found" in result.output
+
+    @patch("taskcards_monitor.cli.EmailNotifier")
+    @patch("taskcards_monitor.cli.TaskCardsFetcher")
+    @patch("taskcards_monitor.cli.BoardMonitor")
+    def test_check_command_sends_email(
+        self, mock_monitor_class, mock_fetcher_class, mock_notifier_class, runner, tmp_path
+    ):
+        """Test check command sends email notification when configured."""
+        email_config = tmp_path / "email.yaml"
+        email_config.write_text("email:\n  from: a@example.com\n  to: [b@example.com]\n")
+
+        mock_monitor = MagicMock()
+        mock_monitor_class.return_value = mock_monitor
+        mock_monitor.get_previous_state.return_value = BoardState({"cards": []})
+
+        from taskcards_monitor.changes import CardAdded, ChangeSet
+
+        mock_monitor.detect_changes.return_value = ChangeSet(
+            is_first_run=False,
+            cards_added=[CardAdded(id="card1", title="T", description="", link="", column=None)],
+        )
+
+        mock_fetcher = MagicMock()
+        mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
+        mock_fetcher.fetch_board.return_value = {"cards": []}
+
+        mock_notifier = MagicMock()
+        mock_notifier_class.return_value = mock_notifier
+        mock_notifier.notify_changes.return_value = True
+
+        result = runner.invoke(main, ["check", "board123", "--email-config", str(email_config)])
+
+        assert result.exit_code == 0
+        assert "Email notification sent" in result.output
+        mock_notifier.notify_changes.assert_called_once()
+
+    @patch("taskcards_monitor.cli.EmailNotifier")
+    @patch("taskcards_monitor.cli.TaskCardsFetcher")
+    @patch("taskcards_monitor.cli.BoardMonitor")
+    def test_check_command_email_not_sent_verbose(
+        self, mock_monitor_class, mock_fetcher_class, mock_notifier_class, runner, tmp_path
+    ):
+        """Test check command verbose output when no email is sent."""
+        email_config = tmp_path / "email.yaml"
+        email_config.write_text("email:\n  from: a@example.com\n  to: [b@example.com]\n")
+
+        mock_monitor = MagicMock()
+        mock_monitor_class.return_value = mock_monitor
+        mock_monitor.get_previous_state.return_value = BoardState({"cards": []})
+
+        mock_fetcher = MagicMock()
+        mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
+        mock_fetcher.fetch_board.return_value = {"cards": []}
+
+        mock_notifier = MagicMock()
+        mock_notifier_class.return_value = mock_notifier
+        mock_notifier.notify_changes.return_value = False
+
+        result = runner.invoke(
+            main,
+            [
+                "check",
+                "board123",
+                "-v",
+                "--token",
+                "secret123",
+                "--password",
+                "hunter2",
+                "--email-config",
+                str(email_config),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Using view token" in result.output
+        assert "Using board password" in result.output
+        assert "Email notifications enabled" in result.output
+        assert "Previous state loaded" in result.output
+        assert "No email sent" in result.output
+
+    @patch("taskcards_monitor.cli.EmailNotifier")
+    @patch("taskcards_monitor.cli.TaskCardsFetcher")
+    @patch("taskcards_monitor.cli.BoardMonitor")
+    def test_check_command_email_error(
+        self, mock_monitor_class, mock_fetcher_class, mock_notifier_class, runner, tmp_path
+    ):
+        """Test check command aborts when email sending fails."""
+        email_config = tmp_path / "email.yaml"
+        email_config.write_text("email:\n  from: a@example.com\n  to: [b@example.com]\n")
+
+        mock_monitor = MagicMock()
+        mock_monitor_class.return_value = mock_monitor
+        mock_monitor.get_previous_state.return_value = None
+
+        mock_fetcher = MagicMock()
+        mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
+        mock_fetcher.fetch_board.return_value = {"cards": []}
+
+        mock_notifier_class.side_effect = ValueError("Bad config")
+
+        result = runner.invoke(
+            main, ["check", "board123", "-v", "--email-config", str(email_config)]
+        )
+
+        assert result.exit_code != 0
+        assert "Error sending email" in result.output
+
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     def test_inspect_command_error(self, mock_fetcher_class, runner):
         """Test inspect command when fetch fails."""
@@ -512,6 +639,114 @@ class TestCLI:
         # Verify error handling
         assert result.exit_code != 0
         assert "Error" in result.output
+
+
+class TestHistoryCommand:
+    """Tests for the history command."""
+
+    @pytest.fixture
+    def runner(self):
+        """Create a Click CLI runner."""
+        return CliRunner()
+
+    @pytest.fixture
+    def db_with_history(self, tmp_path):
+        """Create a database with a board and change history."""
+        db_path = tmp_path / "taskcards-monitor.db"
+
+        with patch("taskcards_monitor.database.get_default_db_path") as mock_db_path:
+            mock_db_path.return_value = db_path
+            init_database(db_path)
+
+            monitor = BoardMonitor("board123")
+
+            def make_data(cards):
+                return {
+                    "id": "board123",
+                    "name": "Test Board",
+                    "lists": [{"id": "list1", "name": "To Do", "position": 0}],
+                    "cards": cards,
+                }
+
+            def make_card(card_id, title):
+                return {
+                    "id": card_id,
+                    "title": title,
+                    "description": "",
+                    "link": "",
+                    "kanbanPosition": {"listId": "list1"},
+                    "attachments": [],
+                }
+
+            # First run, then modify a card, add one, remove one
+            monitor.save_state(
+                BoardState(make_data([make_card("card1", "Task 1"), make_card("card2", "Task 2")]))
+            )
+            monitor.save_state(
+                BoardState(
+                    make_data([make_card("card1", "Updated Task 1"), make_card("card3", "Task 3")])
+                )
+            )
+
+            yield db_path
+
+    def test_history_no_board(self, runner, tmp_path):
+        """Test history command when board doesn't exist."""
+        db_path = tmp_path / "taskcards-monitor.db"
+
+        with patch("taskcards_monitor.database.get_default_db_path") as mock_db_path:
+            mock_db_path.return_value = db_path
+            result = runner.invoke(main, ["history", "unknown-board"])
+
+        assert result.exit_code == 0
+        assert "No history found" in result.output
+
+    def test_history_shows_changes(self, runner, db_with_history):
+        """Test history command displays recorded changes."""
+        result = runner.invoke(main, ["history", "board123"])
+
+        assert result.exit_code == 0
+        assert "Change History" in result.output
+        assert "Test Board" in result.output
+        assert "Added" in result.output
+        assert "Removed" in result.output
+        assert "Modified" in result.output
+
+    def test_history_with_limit(self, runner, db_with_history):
+        """Test history command respects the limit option."""
+        result = runner.invoke(main, ["history", "board123", "--limit", "1"])
+
+        assert result.exit_code == 0
+        assert "Showing 1 most recent changes" in result.output
+
+    def test_history_since_date(self, runner, db_with_history):
+        """Test history command with --since date filter."""
+        result = runner.invoke(main, ["history", "board123", "--since", "2020-01-01"])
+
+        assert result.exit_code == 0
+        assert "Change History" in result.output
+
+    def test_history_since_future_date(self, runner, db_with_history):
+        """Test history command with --since date that excludes all changes."""
+        result = runner.invoke(main, ["history", "board123", "--since", "2099-01-01"])
+
+        assert result.exit_code == 0
+        assert "No changes found" in result.output
+
+    def test_history_since_invalid_date(self, runner, db_with_history):
+        """Test history command with an invalid --since date."""
+        result = runner.invoke(main, ["history", "board123", "--since", "not-a-date"])
+
+        assert result.exit_code == 0
+        assert "Invalid date format" in result.output
+
+    def test_history_card_filter(self, runner, db_with_history):
+        """Test history command with --card filter."""
+        result = runner.invoke(main, ["history", "board123", "--card", "card3"])
+
+        assert result.exit_code == 0
+        assert "card3" in result.output
+        assert "card2" not in result.output
 
 
 class TestDisplayFunctions:
