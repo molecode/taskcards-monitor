@@ -109,11 +109,9 @@ Or use a more specific schedule:
 
 ## Docker Compose (Alternative)
 
-Create `docker-compose.yml`:
+Create `compose.yaml`:
 
 ```yaml
-version: '3.8'
-
 services:
   taskcards-monitor:
     image: ghcr.io/molecode/taskcards-monitor:latest
@@ -211,7 +209,7 @@ docker run --rm \
   - Required for change detection to work
   - Should be persistent
 
-- **Config Volume** (`-v ~/config:/app/config:ro`):
+- **Config Volume** (`-v ~/taskcards-monitor/config:/app/config:ro`):
   - Provides email configuration
   - Read-only (`:ro`) for security
   - Optional if not using email notifications
@@ -221,14 +219,14 @@ docker run --rm \
 Docker images are built automatically when a new release is published on GitHub.
 
 - `latest` - Latest stable release
-- `0.2.0` - Specific version tag (matches release version)
-- `0.2` - Major.minor version tag
+- `0.7.4` - Specific version tag (matches release version)
+- `0.7` - Major.minor version tag
 - `0` - Major version tag
 
-**Example**: When you publish release `v0.2.0` (or `0.2.0`), the following tags are created:
+**Example**: When you publish release `v0.7.4` (or `0.7.4`), the following tags are created:
 - `ghcr.io/molecode/taskcards-monitor:latest`
-- `ghcr.io/molecode/taskcards-monitor:0.2.0`
-- `ghcr.io/molecode/taskcards-monitor:0.2`
+- `ghcr.io/molecode/taskcards-monitor:0.7.4`
+- `ghcr.io/molecode/taskcards-monitor:0.7`
 - `ghcr.io/molecode/taskcards-monitor:0`
 
 ## Building Locally

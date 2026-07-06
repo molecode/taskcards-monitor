@@ -62,7 +62,7 @@ class TestCLI:
         assert result.exit_code == 0
         assert "First Run" in result.output or "Initial state saved" in result.output
         mock_monitor_class.assert_called_once_with("board123")
-        mock_fetcher.fetch_board.assert_called_once_with("board123", token=None)
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token=None, password="")
         mock_monitor.save_state.assert_called_once()
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
@@ -88,7 +88,68 @@ class TestCLI:
 
         # Verify
         assert result.exit_code == 0
-        mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123")
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123", password="")
+
+    @patch("taskcards_monitor.cli.TaskCardsFetcher")
+    @patch("taskcards_monitor.cli.BoardMonitor")
+    def test_check_command_with_password(self, mock_monitor_class, mock_fetcher_class, runner):
+        """Test check command with password option."""
+        # Setup mocks
+        mock_monitor = MagicMock()
+        mock_monitor_class.return_value = mock_monitor
+        mock_monitor.get_previous_state.return_value = None
+
+        mock_fetcher = MagicMock()
+        mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
+
+        board_data = {
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+            "cards": [],
+        }
+        mock_fetcher.fetch_board.return_value = board_data
+
+        # Run command with token and password
+        result = runner.invoke(
+            main,
+            ["check", "board123", "--token", "secret123", "--password", "hunter2"],
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        mock_fetcher.fetch_board.assert_called_once_with(
+            "board123", token="secret123", password="hunter2"
+        )
+
+    @patch("taskcards_monitor.cli.TaskCardsFetcher")
+    @patch("taskcards_monitor.cli.BoardMonitor")
+    def test_check_command_password_from_env(self, mock_monitor_class, mock_fetcher_class, runner):
+        """Test check command reads password from TASKCARDS_PASSWORD env var."""
+        # Setup mocks
+        mock_monitor = MagicMock()
+        mock_monitor_class.return_value = mock_monitor
+        mock_monitor.get_previous_state.return_value = None
+
+        mock_fetcher = MagicMock()
+        mock_fetcher_class.return_value.__enter__.return_value = mock_fetcher
+
+        board_data = {
+            "lists": [{"id": "col1", "name": "To Do", "position": 0}],
+            "cards": [],
+        }
+        mock_fetcher.fetch_board.return_value = board_data
+
+        # Run command with password provided via environment variable
+        result = runner.invoke(
+            main,
+            ["check", "board123", "--token", "secret123"],
+            env={"TASKCARDS_PASSWORD": "hunter2"},
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        mock_fetcher.fetch_board.assert_called_once_with(
+            "board123", token="secret123", password="hunter2"
+        )
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     @patch("taskcards_monitor.cli.BoardMonitor")
@@ -415,7 +476,7 @@ class TestCLI:
         assert "Cards" in result.output
         assert "Task 1" in result.output
         mock_fetcher_class.assert_called_once_with()
-        mock_fetcher.fetch_board.assert_called_once_with("board123", token=None)
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token=None, password="")
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     def test_inspect_command_with_token(self, mock_fetcher_class, runner):
@@ -435,7 +496,7 @@ class TestCLI:
 
         # Verify
         assert result.exit_code == 0
-        mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123")
+        mock_fetcher.fetch_board.assert_called_once_with("board123", token="secret123", password="")
 
     @patch("taskcards_monitor.cli.TaskCardsFetcher")
     def test_inspect_command_error(self, mock_fetcher_class, runner):
