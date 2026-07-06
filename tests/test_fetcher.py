@@ -110,6 +110,78 @@ class TestTaskCardsFetcher:
         with pytest.raises(ValueError, match="not found"):
             fetcher._grant_access("board123", "badtoken")
 
+    def test_create_visitor_requires_client(self):
+        """Visitor creation without client raises error."""
+        fetcher = TaskCardsFetcher()
+
+        with pytest.raises(ValueError, match="Client not initialized"):
+            fetcher._create_visitor()
+
+    def test_create_visitor_http_error(self):
+        """Visitor creation surfaces http errors."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher.client.post.side_effect = httpx.ConnectError("connection failed")
+
+        with pytest.raises(ValueError, match="Failed to create visitor"):
+            fetcher._create_visitor()
+
+    def test_grant_access_requires_client_and_token(self):
+        """Grant access without client or x-token raises error."""
+        fetcher = TaskCardsFetcher()
+
+        with pytest.raises(ValueError, match="not initialized"):
+            fetcher._grant_access("board123", "token123")
+
+    @pytest.mark.parametrize("status_code", [401, 403])
+    def test_grant_access_denied(self, status_code):
+        """Grant access raises access denied for 401/403 responses."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher.x_token = "visitor123"
+
+        response = MagicMock()
+        http_error = httpx.HTTPStatusError(
+            "fail",
+            request=httpx.Request("POST", "https://example.com"),
+            response=httpx.Response(
+                status_code, request=httpx.Request("POST", "https://example.com")
+            ),
+        )
+        response.raise_for_status.side_effect = http_error
+        fetcher.client.post.return_value = response
+
+        with pytest.raises(ValueError, match="Access denied"):
+            fetcher._grant_access("board123", "token123")
+
+    def test_grant_access_other_status_error(self):
+        """Grant access wraps unexpected status codes."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher.x_token = "visitor123"
+
+        response = MagicMock()
+        http_error = httpx.HTTPStatusError(
+            "fail",
+            request=httpx.Request("POST", "https://example.com"),
+            response=httpx.Response(500, request=httpx.Request("POST", "https://example.com")),
+        )
+        response.raise_for_status.side_effect = http_error
+        fetcher.client.post.return_value = response
+
+        with pytest.raises(ValueError, match="Failed to grant access"):
+            fetcher._grant_access("board123", "token123")
+
+    def test_grant_access_connection_error(self):
+        """Grant access wraps transport errors."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher.x_token = "visitor123"
+        fetcher.client.post.side_effect = httpx.ConnectError("connection failed")
+
+        with pytest.raises(ValueError, match="Failed to grant access"):
+            fetcher._grant_access("board123", "token123")
+
     def test_fetch_board_requires_client(self):
         """fetch_board without context raises error."""
         fetcher = TaskCardsFetcher()
@@ -216,4 +288,48 @@ class TestTaskCardsFetcher:
         fetcher.client.post.return_value = response
 
         with pytest.raises(ValueError, match="not found"):
+            fetcher.fetch_board("board123")
+
+    def test_fetch_board_generic_graphql_error(self):
+        """Non-board GraphQL errors are surfaced with their message."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher._create_visitor = MagicMock(return_value="visitor123")
+
+        response = MagicMock()
+        response.json.return_value = {
+            "errors": [{"message": "Internal error", "extensions": {"code": "OTHER"}}]
+        }
+        response.raise_for_status.return_value = None
+        fetcher.client.post.return_value = response
+
+        with pytest.raises(ValueError, match="GraphQL error: Internal error"):
+            fetcher.fetch_board("board123")
+
+    def test_fetch_board_other_status_error(self):
+        """Non-404 HTTP status errors are wrapped as generic failures."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher._create_visitor = MagicMock(return_value="visitor123")
+
+        error = httpx.HTTPStatusError(
+            "fail",
+            request=httpx.Request("POST", "https://example.com"),
+            response=httpx.Response(500, request=httpx.Request("POST", "https://example.com")),
+        )
+        response = MagicMock()
+        response.raise_for_status.side_effect = error
+        fetcher.client.post.return_value = response
+
+        with pytest.raises(ValueError, match="Failed to fetch board"):
+            fetcher.fetch_board("board123")
+
+    def test_fetch_board_connection_error(self):
+        """Transport errors are wrapped as ValueError."""
+        fetcher = TaskCardsFetcher()
+        fetcher.client = MagicMock()
+        fetcher._create_visitor = MagicMock(return_value="visitor123")
+        fetcher.client.post.side_effect = httpx.ConnectError("connection failed")
+
+        with pytest.raises(ValueError, match="Failed to fetch board"):
             fetcher.fetch_board("board123")
